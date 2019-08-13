@@ -1,0 +1,901 @@
+{% extends "profiles/stislabase.html" %}
+{% load static %}
+
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.3.0/css/select.bootstrap4.min.css">
+<link rel="stylesheet" type="text/css"
+    href="https://cdn.datatables.net/responsive/1.0.7/css/responsive.dataTables.min.css">
+
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/select/1.3.0/js/dataTables.select.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/select/1.3.0/js/select.bootstrap4.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/plug-ins/1.10.19/dataRender/datetime.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/responsive/1.0.7/js/dataTables.responsive.min.js" defer type="text/javascript">
+</script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Test Data</h1>
+            {% comment %} <h>, {{ servername }}</h1> {% endcomment %}
+                <div class="section-header-breadcrumb">
+                    <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+                    <div class="breadcrumb-item"><a href="#">Reduced Test Data</a></div>
+                    <div class="breadcrumb-item"><a href="#">Test List</a></div>
+                    <div class="breadcrumb-item"><a href="#">Test Data</a></div>
+                </div>
+        </div>
+        <h2 class="section-title">Test Name</h2>
+        <p style="text-align:left;" class="section-lead">
+            {{ testname }}
+        </p>
+
+        <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">BEP Efficiency</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="bepeff"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">BEP Flow</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="bepflow"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">BEP Head</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="bephead"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Max Power</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="maxpow"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">PEIcl</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="peicl"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">PEIvl</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="peivl"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Head</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="chart1" class="chart">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Efficiency</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="chart2" class="chart">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Power</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="chart3" class="chart">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Test name: {{ testname }}</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-hover responsive" id="table1">
+                                <thead>
+                                    <th>Flow</th>
+                                    <th>Head</th>
+                                    <th>Efficiency</th>
+                                    <th>Power</th>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Options</h2>
+        <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Constant Speed</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="col-12 form-group">
+                                <label class="custom-switch mt-2">
+                                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
+                                        id="speedcorrection" checked>
+                                    <span class="custom-switch-indicator"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Pipe Diameter Correction</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="col-12 form-group">
+                                <label class="custom-switch mt-2">
+                                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
+                                        id="diacorrection" checked>
+                                    <span class="custom-switch-indicator"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Nominal Speed</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="col-12 form-group">
+                                <input type="text" id="nomspeed" class="form-control" style="text-align:center;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Head Curve Fit Coeffcients</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="col-12 form-group">
+                                <input type="text" value=6 id="headcoeff" class="form-control"
+                                    style="text-align:center;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Power Curve Fit Coeffcients</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="col-12 form-group">
+                                <input type="text" value=4 id="powercoeff" class="form-control"
+                                    style="text-align:center;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Trim Diameter</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="col-12 form-group">
+                                <input type="text" id="trimdia" class="form-control" style="text-align:center;"
+                                    value="{{impdia}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Save</h2>
+        <div class="row">
+            <div class="col-lg-6 col-12">
+                <a href="#" class="btn btn-icon btn-block btn-primary" id="summarybtn"><i class="far fa-edit"></i> Write
+                    Summary to
+                    Database</a>
+            </div>
+            <div class="col-lg-6 col-12">
+                <a href="#" class="btn btn-icon btn-block icon-left btn-secondary" data-toggle="modal"
+                    data-target="#modal1" id="marketingcurvegenbtn"><i class="far fa-edit"></i>Create Marketing
+                    Curves</a>
+            </div>
+        </div>
+    </section>
+
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="modal1" aria-modal="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Data Corrections to Apply</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <form id="create-marketing-curve-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <div class="control-label">Remove Bearing Losses</div>
+                            <label class="custom-switch mt-2">
+                                <input type="checkbox" class="custom-switch-input" name="bearinglossremoval">
+                                <span class="custom-switch-indicator"></span>
+                                <span class="custom-switch-description ml-10"> Select only if this curve is going to be
+                                    applied to CI/KV/KS<br>and was tested with a bearing frame.</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <div class="control-label">Flatten Droop</div>
+                            <label class="custom-switch mt-2">
+                                <input type="checkbox" class="custom-switch-input" name="flattendroop" checked>
+                                <span class="custom-switch-indicator"></span>
+                                <span class="custom-switch-description"> Straighten out curve if head starts dropping on
+                                    the
+                                    left.</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>BEP Point Shift (Percent)</label>
+                            <div class="input-group">
+                                <input class="form-control" value="5" name="bepshift">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Target Efficiency (Percent)</label>
+                            <div class="input-group">
+                                <input class="form-control" name="targeteff" id="targeteff">
+                                <small class="form-text text-muted" id="targeteffHelpBlock"> Leave blank to use actual
+                                    efficiency.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-whitesmoke br">
+                        <button type="submit" class="btn btn-primary">Preview Curves</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="modal2" aria-modal="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Marketing Curves Preview</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>Head</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="chart4" class="chart">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>Efficiency</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="chart5" class="chart">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>Power</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="chart6" class="chart">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>Curve Details</h4>
+                                </div>
+                                <form id="load-marketing-data-form">
+                                    <div class="card-body">
+                                        <div class="modal-body">
+                                            <div class="form-group">
+                                                <label>Curve Name</label>
+                                                <div class="input-group">
+                                                    <input class="form-control" value="{{ testname }}" name="curvename"
+                                                        id="curvename">
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Pump Series</label>
+                                                <select class="form-control" name="pumpseries" id="pumpseries" required>
+                                                    <option disabled="" selected="" value=""> -- Select
+                                                        an option -- </option>
+                                                    <option value="FI">FI</option>
+                                                    <option value="CI">CI</option>
+                                                    <option value="KV">KV</option>
+                                                    <option value="KS">KS</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Pump Model</label>
+                                                <select class="form-control" name="pumpmodel" id="pumpmodel" required>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Design Iteration</label>
+                                                <select class="form-control" name="designiteration" id="designiteration"
+                                                    required>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>RPM</label>
+                                                <select class="form-control" name="rpm" id="rpm" required>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Trim</label>
+                                                <select class="form-control" name="trim" id="trim">
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer br">
+                                            <button type="submit" class="btn btn-primary">Save to Database</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var bep_flow = 0
+    var bep_head = 0
+    var bep_eff = 0
+    var peicl = 0
+    var peivl = 0
+    var flowunits = ""
+    var headunits = ""
+    var powerunits = ""
+    var flowfitdata = []
+    var headfitdata = []
+    var powerfitdata = []
+    var efffitdata = []
+    var flowcorrecteddata = []
+    var headcorrecteddata = []
+    var powercorrecteddata = []
+    var effcorrecteddata = []
+    var headcoeffs = []
+    var effcoeffs = []
+    var powercoeffs = []
+    var bearingframe = ""
+    var rpm = 0
+    var fulltrim = false
+    $(document).ready(function () {
+        var basechartoptions = {
+            chart: {
+                zoomType: 'xy'
+            },
+            title: {
+                text: ''
+            },
+            xAxis: {
+                minorTickInterval: 'auto',
+                gridLineWidth: 1
+            },
+            yAxis: {
+                minorTickInterval: 'auto',
+                gridLineWidth: 1
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {},
+            series: [{
+                type: 'scatter',
+                marker: {
+                    radius: 0.5
+                }
+            }, {
+                type: 'scatter',
+                marker: {
+                    fillColor: '#000000',
+                    radius: 3,
+                    symbol: 'circle'
+                }
+            }],
+            exporting: {
+                enabled: false
+            }
+        };
+        var table1 = $('#table1').DataTable({
+            autoWidth: false,
+            select: {
+                style: 'multi'
+            },
+            order: [
+                [0, "asc"]
+            ],
+            columnDefs: [{
+                targets: [0, 1, 2, 3],
+                className: "text-center",
+                render: function (data) {
+                    return parseFloat(data).toFixed(2);
+                }
+            }],
+            responsive: true,
+            searching: true,
+            processing: true,
+            stateSave: true,
+        });
+
+        const pageUpdate = () => {
+            $.getJSON(
+                "{% url 'reducedtestplotdata' %}", {
+                    testid: parseInt("{{ testid }}"),
+                    speedcorrection: $('#speedcorrection').is(':checked'),
+                    diacorrection: $('#diacorrection').is(':checked'),
+                    nominalrpm: $('#nomspeed').val() ? $('#nomspeed').val() : 0,
+                    headdeg: $('#headcoeff').val(),
+                    powdeg: $('#powercoeff').val(),
+                    trimdia: $('#trimdia').val()
+                }).done(function (data) {
+                    flowfitdata = data.chartflowfit;
+                    headfitdata = data.chartheadfit;
+                    powerfitdata = data.chartpowerfit;
+                    efffitdata = data.chartefffit;
+                    fulltrim = data.fulltrim;
+                    var chart1data = [];
+                    var chart2data = [];
+                    var chart3data = [];
+                    for (var i = 0; i < data.chartflow.length; i++) {
+                        chart1data.push([data.chartflow[i], data.charthead[i]]);
+                        chart2data.push([data.chartflow[i], data.charteff[i]]);
+                        chart3data.push([data.chartflow[i], data.chartpower[i]]);
+                    }
+                    var chart1fitdata = [];
+                    var chart2fitdata = [];
+                    var chart3fitdata = [];
+                    for (var i = 0; i < data.chartflowfit.length; i++) {
+                        chart1fitdata.push([data.chartflowfit[i], data.chartheadfit[i]]);
+                        chart2fitdata.push([data.chartflowfit[i], data.chartefffit[i]]);
+                        chart3fitdata.push([data.chartflowfit[i], data.chartpowerfit[i]]);
+                    }
+
+                    basechartoptions.series[1].data = chart1data;
+                    basechartoptions.series[0].data = chart1fitdata;
+                    basechartoptions.series[0].marker.fillColor = "#FF0000";
+                    basechartoptions.xAxis.title = {
+                        text: data.flowunits
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: data.headunits
+                    };
+                    Highcharts.chart('chart1', basechartoptions);
+
+                    basechartoptions.series[1].data = chart2data;
+                    basechartoptions.series[0].data = chart2fitdata;
+                    basechartoptions.series[0].marker.fillColor = "#00FF00";
+                    basechartoptions.xAxis.title = {
+                        text: data.flowunits
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: "Percent"
+                    };
+                    Highcharts.chart('chart2', basechartoptions);
+
+                    basechartoptions.series[1].data = chart3data;
+                    basechartoptions.series[0].data = chart3fitdata;
+                    basechartoptions.series[0].marker.fillColor = "#0000FF";
+                    basechartoptions.xAxis.title = {
+                        text: data.flowunits
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: data.powerunits
+                    };
+                    Highcharts.chart('chart3', basechartoptions);
+
+                    table1.clear();
+                    table1.rows.add(data.tabledata);
+                    table1.draw();
+                    $("#bepeff").text(data.bepeff.toFixed(2));
+                    $("#bepflow").text(data.bepflow.toFixed(2));
+                    $("#bephead").text(data.bephead.toFixed(2));
+                    $("#maxpow").text(data.maxpow.toFixed(2));
+                    $("#peicl").text(data.peicl.toFixed(2));
+                    $("#peivl").text(data.peivl.toFixed(2));
+                    $("#nomspeed").val(data.nomrpm);
+
+                    bearingframe = data.bearingframe;
+                    rpm = data.nomrpm;
+                    bep_eff = data.bepeff;
+                    bep_flow = data.bepflow;
+                    bep_head = data.bephead;
+                    flowunits = data.flowunits;
+                    headunits = data.headunits;
+                    powerunits = data.powerunits;
+                    peicl = data.peicl;
+                    peivl = data.peivl;
+                });
+        };
+        pageUpdate();
+
+        $('#speedcorrection').change(function (e) {
+            pageUpdate();
+        });
+        $('#diacorrection').change(function (e) {
+            pageUpdate();
+        });
+        $('#nomspeed').change(function (e) {
+            pageUpdate();
+        });
+        /*$('#trimdia').change(function (e) {
+            pageUpdate();
+        });*/
+        $('#headcoeff').change(function (e) {
+            pageUpdate();
+        });
+        $('#powercoeff').change(function (e) {
+            pageUpdate();
+        });
+
+        $("#summarybtn").click(function (e) {
+            e.preventDefault();
+            $.getJSON(
+                "{% url 'addreducedtestdatasummary' %}", {
+                    testid: parseInt("{{ testid }}"),
+                    bepflow: bep_flow,
+                    bephead: bep_head,
+                    flowunits: flowunits,
+                    headunits: headunits,
+                    bepeff: bep_eff,
+                    peicl: peicl,
+                    peivl: peivl,
+                    trimdia: $('#trimdia').val()
+                }).done(function (data) {
+                    if (data.status == 'success') {
+                        var text = ""
+                        if (data.peicl == 0) {
+                            lines = ['BEP FLow: ' + data.bepflow, 'BEP Head: ' + data.bephead,
+                            'BEP Efficiency: ' + data.bepeff, 'Added to ' + data
+                                .testname +
+                            '.'
+                            ]
+                        } else {
+                            lines = ['BEP Flow: ' + data.bepflow, 'BEP Head: ' + data.bephead,
+                            'BEP Efficiency: ' + data.bepeff, 'PEIcl: ' + data.peicl,
+                            'PEIvl: ' + data.peivl, 'Added to ' + data.testname + '.'
+                            ]
+                        }
+                        Swal.fire('Success', lines.join('<br>'), 'success');
+                    }
+                });
+        });
+        $("#create-marketing-curve-form").submit(function (e) {
+            e.preventDefault();
+            var curvename = $("#curvename").val()
+            var curvedata = {
+                'flow': flowfitdata,
+                'head': headfitdata,
+                'power': powerfitdata
+            }
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'fudgedata' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: $("#create-marketing-curve-form").serialize() + "&curvedata=" + JSON
+                    .stringify(curvedata) + "&flowunits=" + flowunits + "&headunits=" +
+                    headunits + "&powerunits=" + powerunits + "&bearingframe=" + bearingframe +
+                    "&rpm=" + rpm,
+                success: function (data) {
+                    basechartoptions = {
+                        chart: {
+                            zoomType: 'xy'
+                        },
+                        title: {
+                            text: ''
+                        },
+                        xAxis: {
+                            minorTickInterval: 'auto',
+                            gridLineWidth: 1
+                        },
+                        yAxis: {
+                            minorTickInterval: 'auto',
+                            gridLineWidth: 1
+                        },
+                        legend: {
+                            enabled: false
+                        },
+                        plotOptions: {},
+                        series: [{
+                            type: 'scatter',
+                            marker: {
+                                radius: 1
+                            }
+                        }, {
+                            type: 'scatter',
+                            marker: {
+                                fillColor: '#000000',
+                                radius: 1,
+                                symbol: 'circle'
+                            }
+                        }],
+                        exporting: {
+                            enabled: false
+                        }
+                    };
+                    var chart4data = [];
+                    var chart5data = [];
+                    var chart6data = [];
+                    flowcorrecteddata = data.flow;
+                    headcorrecteddata = data.head;
+                    powercorrecteddata = data.power;
+                    effcorrecteddata = data.efficiency;
+                    headcoeffs = data.headcoeffs;
+                    effcoeffs = data.effcoeffs;
+                    powercoeffs = data.powercoeffs;
+
+                    for (var i = 0; i < data.flow.length; i++) {
+                        chart4data.push([data.flow[i], data.head[
+                            i]]);
+                        chart5data.push([data.flow[i], data.efficiency[i]]);
+                        //chart5data2.push([data.flowpts[i], data.efficiency[i]]);
+                        chart6data.push([data.flow[i], data.power[i]]);
+                        //chart6data2.push([data.flow[i], data.powerpts[i]]);
+                    }
+
+                    basechartoptions.series[0].data = chart4data;
+                    basechartoptions.series[0].marker.fillColor = "#FF0000";
+                    basechartoptions.xAxis.title = {
+                        text: data.flowunits
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: data.headunits
+                    };
+                    Highcharts.chart('chart4', basechartoptions);
+
+                    basechartoptions.series[0].data = chart5data;
+                    basechartoptions.series[0].marker.fillColor = "#00FF00";
+                    basechartoptions.xAxis.title = {
+                        text: data.flowunits
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: "Percent"
+                    };
+                    Highcharts.chart('chart5', basechartoptions);
+
+                    basechartoptions.series[0].data = chart6data;
+                    basechartoptions.series[0].marker.fillColor = "#0000FF";
+                    basechartoptions.xAxis.title = {
+                        text: data.flowunits
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: data.powerunits
+                    };
+                    Highcharts.chart('chart6', basechartoptions);
+                    $("#modal2").modal('show');
+                }
+            });
+        });
+        $("#pumpseries").change(function (e) {
+            $.getJSON(
+                "{% url 'getpumpmodels' %}", {
+                    series: $("#pumpseries").val()
+                }).done(function (data) {
+                    $('#pumpmodel').find('option').remove().end().append(
+                        '<option disabled = "" selected = "" value = "" > --Select an option-- </option>'
+                    );
+                    $('#designiteration').find('option').remove().end();
+                    $('#rpm').find(
+                        'option').remove().end();
+                    $('#trim').find('option').remove()
+                        .end();
+                    $.each(data.pumpmodels, function (key, value) {
+                        $('#pumpmodel')
+                            .append($("<option></option>")
+                                .attr("value", value)
+                                .text(value));
+                    });
+                });
+        });
+        $("#pumpmodel").change(function (e) {
+            $.getJSON(
+                "{% url 'getdesignits' %}", {
+                    series: $("#pumpseries").val(),
+                    pumpmodel: $("#pumpmodel").val()
+                }).done(function (data) {
+                    $('#designiteration').find('option').remove().end().append(
+                        '<option disabled = "" selected = "" value = "" > --Select an option-- </option>'
+                    );
+                    $('#rpm').find('option').remove().end();
+                    $('#trim').find('option').remove().end();
+                    $.each(data.designs, function (key, value) {
+                        $('#designiteration')
+                            .append($("<option></option>")
+                                .attr("value", value)
+                                .text(value));
+                    });
+                });
+        });
+        $("#designiteration").change(function (e) {
+            $.getJSON(
+                "{% url 'getrpms' %}", {
+                    series: $("#pumpseries").val(),
+                    pumpmodel: $("#pumpmodel").val(),
+                    design: $("#designiteration").val()
+                }).done(function (data) {
+                    $('#rpm').find('option').remove().end().append(
+                        '<option disabled = "" selected = "" value = "" > --Select an option-- </option>'
+                    );
+                    $('#trim').find('option').remove().end();
+                    $.each(data.rpms, function (key, value) {
+                        $('#rpm')
+                            .append($("<option></option>")
+                                .attr("value", value)
+                                .text(value));
+                    });
+                });
+        });
+        $("#rpm").change(function (e) {
+            $.getJSON(
+                "{% url 'gettrims' %}", {
+                    series: $("#pumpseries").val(),
+                    pumpmodel: $("#pumpmodel").val(),
+                    design: $("#designiteration").val(),
+                    rpm: $("#rpm").val()
+                }).done(function (data) {
+                    $('#trim').find('option').remove().end().append(
+                        '<option disabled = "" selected = "" value = "" > --Select an option-- </option>'
+                    );
+                    $.each(data.trims, function (key, value) {
+                        $('#trim')
+                            .append($("<option></option>")
+                                .attr("value", value)
+                                .text(value));
+                    });
+                });
+        });
+
+        $("#load-marketing-data-form").submit(function (e) {
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'addmarketingdata' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: "curvename=" + $("#curvename").val() + "&series=" + $("#pumpseries")
+                    .val() + "&pumpmodel=" + $("#pumpmodel").val() + "&design=" + $(
+                        "#designiteration").val() + "&rpm=" + $("#rpm").val() + "&trim=" + $(
+                            "#trim").val() + "&curvedata=" + JSON.stringify({
+                                flow: flowcorrecteddata,
+                                head: headcorrecteddata,
+                                power: powercorrecteddata,
+                                eff: effcorrecteddata
+                            }) + "&curveheadcoefficients=" + JSON.stringify(headcoeffs) +
+                            "&curveeffcoefficients=" + JSON.stringify(effcoeffs) +
+                            "&curvepowercoefficients=" + JSON.stringify(powercoeffs) + "&fulltrim=" +
+                    fulltrim + "&flowunits=" + flowunits + "&headunits=" + headunits +
+                    "&powerunits=" + powerunits + "&testid=" + parseInt("{{ testid }}"),
+                success: function (data) {
+                    if (data.status == 'success') {
+                        Swal.fire('Success', 'Added Data Succesfully.', 'success');
+                    }
+                }
+            });
+        });
+
+
+    });
+</script>
+{% endblock content%}

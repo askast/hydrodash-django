@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+{% load static %}
+{% load widget_tweaks %}
+<html lang="en">
+
+<head>
+    <title>{{title1|default:"Hydro Dash 3.0"}}</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'profiles/img/favicon.ico' %}" />
+    <!-- Meta -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- General CSS Files -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+        integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+
+    <!-- Template css -->
+    <link rel="stylesheet" href="{% static 'profiles/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'profiles/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'profiles/css/app.css' %}">
+
+</head>
+
+<body>
+
+    <div id="app">
+        <section class="section">
+            <div class="d-flex flex-wrap align-items-stretch">
+                <div class="col-lg-4 col-md-6 col-12 order-lg-1 min-vh-100 order-2 bg-white">
+                    <div class="p-4 m-3">
+                        <img src="{% static 'profiles/img/logo.png'%}" alt="logo" width="220"
+                            class="shadow-light mb-5 mt-2 logo">
+                        <h3 class="m-4 text-center ">Successfully signed out</h3>
+                        <p class="m-2 text-center text-muted"><a href="{% url 'signin' %}">Sign in</a></p>
+
+                        <div class="text-center mt-5 text-small">
+                            Copyright &copy; Taco Comfort Solutions
+                            <div class="mt-2">
+                                <a href="#">Privacy Policy</a>
+                                <div class="bullet"></div>
+                                <a href="#">Terms of Service</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="bgimage"
+                    class="col-lg-8 col-12 order-lg-2 order-1 min-vh-100 background-walk-y position-relative overlay-gradient-bottom">
+                    <div class="absolute-bottom-left index-2">
+                        <div class="text-light p-5 pb-2">
+                            <div class="mb-5 pb-3">
+                                <h1 class="mb-2 display-4 font-weight-bold">Have a great day</h1>
+                            </div>
+                            Photo by <a id="photoname" class="text-light bb"></a> on <a class="text-light bb"
+                                target="_blank" href="https://unsplash.com">Unsplash</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- General JS Scripts -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.nicescroll/3.7.6/jquery.nicescroll.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="{% static 'profiles/js/stisla.js'%}"></script>
+
+    <!-- JS Libraies -->
+
+    <!-- Template JS File -->
+    <script src="{% static 'profiles/js/scripts.js'%}"></script>
+    <script src="{% static 'profiles/js/custom.js'%}"></script>
+
+    <!-- Page Specific JS File -->
+
+
+    <script>
+        function GetRandomBackground() {
+            var app_id = 'd5f0b19da3d4368a0249cd142aef5646c4c70d5faec80ec4771a275610cb8375'
+            var url = 'https://api.unsplash.com/photos/random?collections=827743&client_id=' + app_id;
+            $.ajax({
+                url: url,
+                dataType: 'json',
+                success: function (json) {
+                    var src = json.urls.full;
+                    $('#bgimage').css('background-image', 'url(' + src + ')').css('background-size',
+                        'cover');
+                    $('#photoname').text(json.user.name);
+                }
+            });
+        }
+        GetRandomBackground();
+    </script>
+</body>
+
+</html>
+
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-content">
+            <div class="auth-bg">
+                <span class="r"></span>
+                <span class="r s"></span>
+                <span class="r s"></span>
+                <span class="r"></span>
+            </div>
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="feather icon-lock auth-icon"></i>
+                    </div>
+                    <h3 class="mb-4">Successfully signed out</h3>
+                    <p class="mb-2 text-muted"><a href="{% url 'signin' %}">Sign in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

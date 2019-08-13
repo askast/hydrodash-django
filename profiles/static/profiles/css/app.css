@@ -1,0 +1,35 @@
+tbody tr.selected td {
+    background: none repeat scroll 0 0 #6777ef;
+    color: #ffffff;
+}
+
+.chart {
+    width: 100%;
+    height: 500px;
+}
+
+.drop-active {
+    border-color: #aaa;
+}
+
+.drop-target {
+    background-color: #29e;
+    border-color: #fff;
+    border-style: solid;
+}
+
+.drag-drop.can-drop {
+    color: #000;
+    background-color: #4e4;
+}
+
+.logo {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+.modal-lg {
+    max-width: 80% !important;
+}

@@ -1,0 +1,326 @@
+{% extends "profiles/stislabase.html" %} {% load static %} {% block extrahead %}
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css"
+/>
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/select/1.3.0/css/select.bootstrap4.min.css"
+/>
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/responsive/1.0.7/css/responsive.dataTables.min.css"
+/>
+
+<script
+    src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/select/1.3.0/js/dataTables.select.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/select/1.3.0/js/select.bootstrap4.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/plug-ins/1.10.19/dataRender/datetime.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/responsive/1.0.7/js/dataTables.responsive.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+
+{% endblock %} {% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Performance Curve</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active">
+                    <a href="#">Dashboard</a>
+                </div>
+                <div class="breadcrumb-item">
+                    <a href="#">Reduced Test Data</a>
+                </div>
+                <div class="breadcrumb-item"><a href="#">Test List</a></div>
+                <div class="breadcrumb-item"><a href="#">Test Data</a></div>
+            </div>
+        </div>
+        <h2 class="section-title">Curve Name</h2>
+        <p style="text-align:left;" class="section-lead">
+            {{ curvename }}
+        </p>
+
+        <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">BEP Efficiency</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="bepeff"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">BEP Flow</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="bepflow"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">BEP Head</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="bephead"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">Max Power</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="maxpow"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">PEIcl</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="peicl"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+                <div class="card card-statistic-1">
+                    <div class="card-wrap">
+                        <div class="card-header">
+                            <h4 class="text-center">PEIvl</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-center" id="peivl"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="row">
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Head</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="chart1" class="chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Efficiency</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="chart2" class="chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Power</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="chart3" class="chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Curve name: {{ curvename }}</h4>
+                        </div>
+                        <div class="card-body">
+                            <table
+                                class="table table-hover responsive"
+                                id="table1"
+                            >
+                                <thead>
+                                    <th>Flow</th>
+                                    <th>Head</th>
+                                    <th>Efficiency</th>
+                                    <th>Power</th>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    $(document).ready(function() {
+        var basechartoptions = {
+            chart: {
+                zoomType: 'xy'
+            },
+            title: {
+                text: ''
+            },
+            xAxis: {
+                minorTickInterval: 'auto',
+                gridLineWidth: 1
+            },
+            yAxis: {
+                minorTickInterval: 'auto',
+                gridLineWidth: 1
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {},
+            series: [
+                {
+                    type: 'line',
+                    marker: {
+                        enabled: false
+                    }
+                }
+            ],
+            exporting: {
+                enabled: false
+            }
+        };
+        var table1 = $('#table1').DataTable({
+            autoWidth: false,
+            select: {
+                style: 'multi'
+            },
+            order: [[0, 'asc']],
+            columnDefs: [
+                {
+                    targets: [0, 1, 2, 3],
+                    className: 'text-center',
+                    render: function(data) {
+                        return parseFloat(data).toFixed(2);
+                    }
+                }
+            ],
+            responsive: true,
+            searching: true,
+            processing: true,
+            stateSave: true
+        });
+
+        const pageUpdate = () => {
+            $.getJSON("{% url 'marketingcurvedata' %}", {
+                curveid: parseInt('{{ curveid }}')
+            }).done(function(data) {
+                var flowdata = data.flow;
+                var headdata = data.head;
+                var powerdata = data.power;
+                var effdata = data.eff;
+
+                var chart1data = [];
+                var chart2data = [];
+                var chart3data = [];
+                for (var i = 0; i < data.flow.length; i++) {
+                    chart1data.push([data.flow[i], data.head[i]]);
+                    chart2data.push([data.flow[i], data.eff[i]]);
+                    chart3data.push([data.flow[i], data.power[i]]);
+                }
+
+                basechartoptions.series[0].data = chart1data;
+                basechartoptions.series[0].color = '#FF0000';
+                basechartoptions.xAxis.title = {
+                    text: data.flowunits
+                };
+                basechartoptions.yAxis.title = {
+                    text: data.headunits
+                };
+                Highcharts.chart('chart1', basechartoptions);
+
+                basechartoptions.series[0].data = chart2data;
+                basechartoptions.series[0].color = '#00FF00';
+                basechartoptions.xAxis.title = {
+                    text: data.flowunits
+                };
+                basechartoptions.yAxis.title = {
+                    text: 'Percent'
+                };
+                Highcharts.chart('chart2', basechartoptions);
+
+                basechartoptions.series[0].data = chart3data;
+                basechartoptions.series[0].color = '#0000FF';
+                basechartoptions.xAxis.title = {
+                    text: data.flowunits
+                };
+                basechartoptions.yAxis.title = {
+                    text: data.powerunits
+                };
+                Highcharts.chart('chart3', basechartoptions);
+
+                table1.clear();
+                table1.rows.add(data.tabledata);
+                table1.draw();
+                $('#bepeff').text(
+                    (Math.round(data.bepeff * 100 * 4) / 4).toFixed(2)
+                );
+                $('#bepflow').text(data.bepflow.toFixed(2));
+                $('#bephead').text(data.bephead.toFixed(2));
+                $('#maxpow').text(data.maxpower.toFixed(2));
+                $('#peicl').text(data.peicl.toFixed(2));
+                $('#peivl').text(data.peivl.toFixed(2));
+            });
+        };
+        pageUpdate();
+    });
+</script>
+{% endblock content%}

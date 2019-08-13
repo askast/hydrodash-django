@@ -1,0 +1,755 @@
+{% extends "profiles/stislabase.html" %}
+{% load static %}
+
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.3.0/css/select.bootstrap4.min.css">
+<link rel="stylesheet" type="text/css"
+    href="https://cdn.datatables.net/responsive/1.0.7/css/responsive.dataTables.min.css">
+
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/select/1.3.0/js/dataTables.select.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/select/1.3.0/js/select.bootstrap4.min.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/plug-ins/1.10.19/dataRender/datetime.js" defer type="text/javascript"></script>
+<script src="https://cdn.datatables.net/responsive/1.0.7/js/dataTables.responsive.min.js" defer type="text/javascript">
+</script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.1/dist/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Test Data Reduction</h1>
+            {% comment %} <h>, {{ servername }}</h1> {% endcomment %}
+                <div class="section-header-breadcrumb">
+                    <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+                    <div class="breadcrumb-item"><a href="#">Raw Test Data</a></div>
+                    <div class="breadcrumb-item"><a href="#">Test List</a></div>
+                    <div class="breadcrumb-item"><a href="#">Test List</a></div>
+                </div>
+        </div>
+        <h2 class="section-title">Applying Velocity head corrections and RPM corrections</h2>
+        <p style="text-align:left;" class="section-lead">Data shown here is displayed as it is from the data aquisition
+            system. Corrections for Pipe size and RPM have not been applied to it. Only for Reference.
+        </p>
+        <div class="section-body">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="perftest-tab" data-toggle="tab" href="#perftest"
+                                        role="tab" aria-controls="perftest" aria-selected="true">Performance Tests</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+                                        aria-controls="profile" aria-selected="false">Variable Speed PEI</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab"
+                                        aria-controls="contact" aria-selected="false">Residential PEI</a>
+                                </li>
+                            </ul>
+                            <div class="tab-content" id="myTabContent">
+                                <div class="tab-pane fade show active" id="perftest" role="tabpanel"
+                                    aria-labelledby="perftest-tab">
+                                    <form id="form1">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h4>Tests</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            {% for testid, testname in tests %}
+                                                            <div id="testcard{{ forloop.counter }}"
+                                                                class="col-12 col-md-6 alert alert-primary alert-has-icon"
+                                                                name="{{ testid }}" style="z-index:10">
+                                                                <div class="alert-icon"><i
+                                                                        class="fas fa-ellipsis-v"></i>
+                                                                </div>
+                                                                <div class=alert-body>
+                                                                    <div class="alert-title">{{ testid }}</div>
+                                                                    {{ testname }}
+                                                                </div>
+                                                            </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Flow Field</label>
+                                                                <select class="form-control" id="flowfield"
+                                                                    name="flowfield">
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    {% for choice in testheaders %}
+                                                                    <option
+                                                                        {% if choice == 'FM\\FLOW' %}selected{% endif %}>
+                                                                        {{ choice }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Flow Units</label>
+                                                                <select class="form-control" id="flowunits"
+                                                                    name="flowunits">
+                                                                    <option selected>Gallons per minute</option>
+                                                                    <option>Liters per second</option>
+                                                                    <option>Cubic meters per hour</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Head Field</label>
+                                                                <select class="form-control" id="headfield"
+                                                                    name="headfield">
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    {% for choice in testheaders %}
+                                                                    <option
+                                                                        {% if choice == 'FM\\HEAD' %}selected{% endif %}>
+                                                                        {{ choice }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Head Units</label>
+                                                                <select class="form-control" id="headunits"
+                                                                    name="headunits">
+                                                                    <option selected>Feet</option>
+                                                                    <option>Meters</option>
+                                                                    <option>Millimeters</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Power/HP Field</label>
+                                                                <select class="form-control" id="powerfield"
+                                                                    name="powerfield">
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    {% for choice in testheaders %}
+                                                                    <option
+                                                                        {% if choice == 'FM\\HP' %}selected{% endif %}>
+                                                                        {{ choice }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Power/HP Units</label>
+                                                                <select class="form-control" id="powerunits"
+                                                                    name="powerunits">
+                                                                    <option>Horsepower</option>
+                                                                    <option>Kilowatts</option>
+                                                                    <option>Watts</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Temperature Field</label>
+                                                                <select class="form-control" id="tempfield"
+                                                                    name="tempfield">
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    {% for choice in testheaders %}
+                                                                    <option
+                                                                        {% if choice == 'FM\\SYST' %}selected{% endif %}>
+                                                                        {{ choice }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Temperature Units</label>
+                                                                <select class="form-control" id="tempunits"
+                                                                    name="tempunits">
+                                                                    <option>Fahrenheit</option>
+                                                                    <option>Celsius</option>
+                                                                    <option>Kelvin</option>
+                                                                    <option>Rankine</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>RPM Field</label>
+                                                                <select class="form-control" id="rpmfield"
+                                                                    name="rpmfield">
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    <option>None</option>
+                                                                    {% for choice in testheaders %}
+                                                                    <option
+                                                                        {% if choice == 'FM\\RPM' %}selected{% endif %}>
+                                                                        {{ choice }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+
+                                                        </div>
+                                                        <a href="#" class="btn btn-primary" id="viewbtn">View Data</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h4>Preliminary Test Plot</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="chart1" class="chart">
+
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-footer">
+                                                        <div class="float-left  d-inline">
+                                                            <a href="#" class="btn btn-primary" id="delbtn">Delete
+                                                                Points</a>
+                                                        </div>
+                                                        <div id="dellist" class="d-inline"></div>
+                                                        <div class="float-right"><a href="#" class="btn btn-danger"
+                                                                id="clbtn">Clear Selected Points</a></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h4>Test Details</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Test Name</label>
+                                                                <input type="text" id="testname" class="form-control"
+                                                                    name="testname">
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Test Conducted By</label>
+                                                                <input type="text" id="testeng" class="form-control"
+                                                                    name="testeng">
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Test Loop</label>
+                                                                <select class="form-control" name="testloop">
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    <option>Commercial Front Loop</option>
+                                                                    <option>Commercial Back Loop</option>
+                                                                    <option>Residential Loop 1</option>
+                                                                    <option>Residential Loop 2</option>
+                                                                    <option>Outside Loop</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Discharge Pipe Diameter</label>
+                                                                <select class="form-control" name="dispipedia">
+                                                                    <option disabled="" selected="" value="" required>--
+                                                                        Select an option -- </option>
+                                                                    <option value=0.62>0.5</option>
+                                                                    <option value=0.82>0.75</option>
+                                                                    <option value=1.05>1.0</option>
+                                                                    <option value=1.38>1.25</option>
+                                                                    <option value=1.61>1.5</option>
+                                                                    <option value=2.07>2.0</option>
+                                                                    <option value=2.47>2.5</option>
+                                                                    <option value=3.07>3.0</option>
+                                                                    <option value=3.55>3.5</option>
+                                                                    <option value=4.03>4.0</option>
+                                                                    <option value=5.05>5.0</option>
+                                                                    <option value=6.07>6.0</option>
+                                                                    <option value=7.98>8.0</option>
+                                                                    <option value=10.02>10.0</option>
+                                                                    <option value=11.94>12.0</option>
+                                                                    <option value=13.13>14.0</option>
+                                                                    <option value=15>16.0</option>
+                                                                    <option value=16.66>18.0</option>
+                                                                    <option value=18.81>20.0</option>
+                                                                    <option value=22.63>24.0</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Inlet Pipe Diameter</label>
+                                                                <select class="form-control" name="inpipedia">
+                                                                    <option disabled="" selected="" value="" required>
+                                                                        -- Select an option -- </option>
+                                                                    <option value=0.62>0.5</option>
+                                                                    <option value=0.82>0.75</option>
+                                                                    <option value=1.05>1.0</option>
+                                                                    <option value=1.38>1.25</option>
+                                                                    <option value=1.61>1.5</option>
+                                                                    <option value=2.07>2.0</option>
+                                                                    <option value=2.47>2.5</option>
+                                                                    <option value=3.07>3.0</option>
+                                                                    <option value=3.55>3.5</option>
+                                                                    <option value=4.03>4.0</option>
+                                                                    <option value=5.05>5.0</option>
+                                                                    <option value=6.07>6.0</option>
+                                                                    <option value=7.98>8.0</option>
+                                                                    <option value=10.02>10.0</option>
+                                                                    <option value=11.94>12.0</option>
+                                                                    <option value=13.13>14.0</option>
+                                                                    <option value=15>16.0</option>
+                                                                    <option value=16.66>18.0</option>
+                                                                    <option value=18.81>20.0</option>
+                                                                    <option value=22.63>24.0</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Pump Type</label>
+                                                                <select class="form-control" name="pumptype" required>
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    <option value="FI">FI</option>
+                                                                    <option value="CI">CI</option>
+                                                                    <option value="KV">KV</option>
+                                                                    <option value="KS">KS</option>
+                                                                    <option value="TA">TA</option>
+                                                                    <option value="SKV">SKV</option>
+                                                                    <option value="SKS">SKS</option>
+                                                                    <option value="SFI">SFI</option>
+                                                                    <option value="SCI">SCI</option>
+                                                                    <option value="ESCC">End suction close-coupled
+                                                                    </option>
+                                                                    <option value="ESFM">End suction frame mounted/own
+                                                                        bearings</option>
+                                                                    <option value="IL">In-Line</option>
+                                                                    <option value="RSV">Radially split, multi-stage,
+                                                                        vertical, in-line casing diffuser</option>
+                                                                    <option value="ST">Submersible turbine</option>
+                                                                    <option value="Circ">Residential Circulator</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Impeller Diameter</label>
+                                                                <input class="form-control" rows="10"
+                                                                    name="diameter"></input>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <div class="control-label">Full Trim</div>
+                                                                <label class="custom-switch mt-2">
+                                                                    <input type="checkbox" name="fulltrim"
+                                                                        class="custom-switch-input" id="fulltrim">
+                                                                    <span class="custom-switch-indicator"></span>
+                                                                    <span class="custom-switch-description"> Select if
+                                                                        impeller diameter used in this test is the full
+                                                                        trim of this model. PEI calculations apply only
+                                                                        to full trim tests.</span>
+                                                                </label>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Bearing Frame</label>
+                                                                <select class="form-control" name="bearingframe"
+                                                                    required>
+                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                        an option -- </option>
+                                                                    <option value="H">H Frame</option>
+                                                                    <option value="J">J Frame</option>
+                                                                    <option value="L">L Frame</option>
+                                                                    <option value="N">N Frame</option>
+                                                                    <option value="N/A">No Bearing Frame</option>
+                                                                </select>
+                                                                <small id="bearingHelpBlock"
+                                                                    class="form-text text-muted">
+                                                                    This is the bearing frame this test was done with.
+                                                                    Not what the pump was designed to have.
+                                                                </small>
+                                                            </div>
+                                                            <div class="col-12 col-md-6 form-group">
+                                                                <label>Description</label>
+                                                                <textarea class="form-control" rows=4 name="description"
+                                                                    style="height:80%;"></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <a href="#" class="btn btn-primary" id="loaddatabtn">Load
+                                                            Data</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                                    <div class="row">
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>Tests</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="testcard"
+                                                        class="drag-drop alert alert-primary alert-has-icon"
+                                                        style="z-index:10">
+                                                        <div class="alert-icon"><i class="fas fa-ellipsis-v"></i></div>
+                                                        <div class=alert-body>
+                                                            <div class="alert-title">test</div>Drag and drop
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>Drop Test Here</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="outer-dropzone" class="dropzone">#outer-dropzone</div>
+                                                    <div id="inner-dropzone" class="dropzone">#inner-dropzone</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>Test Data Collected</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>Flow Points To Average Around</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>Head vs Flow</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="chart5" class="chart">
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>Test name: {{ testname }}</h4>
+                                                </div>
+                                                <div class="card-body">
+                                                    {% comment %} {% render_table tables.0 %} {% endcomment %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+                                    Vestibulum imperdiet odio sed neque ultricies, ut dapibus mi maximus. Proin ligula
+                                    massa, gravida in lacinia efficitur, hendrerit eget mauris. Pellentesque fermentum,
+                                    sem interdum molestie finibus, nulla diam varius leo, nec varius lectus elit id
+                                    dolor. Nam malesuada orci non ornare vulputate. Ut ut sollicitudin magna. Vestibulum
+                                    eget ligula ut ipsum venenatis ultrices. Proin bibendum bibendum augue ut luctus.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+<script>
+    $(document).ready(function () {
+        var removefl = "{{removefl}}";
+        console.log(removefl);
+
+        function arrayRemove(arr, value) {
+            return arr.filter(function (ele) {
+                return ele != value;
+            });
+        }
+        var table1 = $('#table1').DataTable({
+            select: {
+                style: 'multi'
+            },
+            "order": [
+                [3, "desc"]
+            ],
+            columnDefs: [{
+                className: "text-center",
+                targets: [2]
+            }],
+            responsive: true,
+            searching: true,
+            processing: true,
+            stateSave: true
+        });
+
+        // enable draggables to be dropped into this
+        interact('.dropzone').dropzone({
+            // only accept elements matching this CSS selector
+            accept: '.drag-drop',
+            // Require a 75% element overlap for a drop to be possible
+            overlap: 'pointer',
+
+            // listen for drop related events:
+
+            ondropactivate: function (event) {
+                // add active dropzone feedback
+                event.target.classList.add('drop-active')
+            },
+            ondragenter: function (event) {
+                var draggableElement = event.relatedTarget
+                var dropzoneElement = event.target
+
+                // feedback the possibility of a drop
+                dropzoneElement.classList.add('drop-target')
+                draggableElement.classList.add('can-drop')
+            },
+            ondragleave: function (event) {
+                // remove the drop feedback style
+                event.target.classList.remove('drop-target')
+                event.relatedTarget.classList.remove('can-drop')
+            },
+            ondrop: function (event) {
+                console.log(event.relatedTarget.textContent)
+                console.log(event.target.textContent)
+            },
+            ondropdeactivate: function (event) {
+                // remove active dropzone feedback
+                event.target.classList.remove('drop-active')
+                event.target.classList.remove('drop-target')
+            }
+        });
+
+        interact('.drag-drop')
+            .draggable({
+                inertia: true,
+                autoScroll: true,
+                // dragMoveListener from the dragging demo above
+                onmove: dragMoveListener
+            });
+
+        function dragMoveListener(event) {
+            var target = event.target
+            // keep the dragged position in the data-x/data-y attributes
+            var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
+            var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
+
+            // translate the element
+            target.style.webkitTransform =
+                target.style.transform =
+                'translate(' + x + 'px, ' + y + 'px)'
+
+            // update the posiion attributes
+            target.setAttribute('data-x', x)
+            target.setAttribute('data-y', y)
+        }
+        var selectedPoints = [];
+        var chart1 = "";
+        var testdata = [];
+        var rawtestids = "";
+        var basechartoptions = {
+            chart: {
+                zoomType: 'xy'
+            },
+            title: {
+                text: ''
+            },
+            xAxis: {
+                minorTickInterval: 'auto',
+                gridLineWidth: 1
+            },
+            yAxis: {
+                minorTickInterval: 'auto',
+                gridLineWidth: 1
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                scatter: {
+                    marker: {
+                        radius: 3
+                    },
+                    allowPointSelect: true,
+                    point: {
+                        events: {
+                            click: function (e) {
+                                var thisPoint = this,
+                                    thisIndex = thisPoint.index,
+                                    thisSeries = thisPoint.series,
+                                    allSeries = thisSeries.chart.series;
+
+                                e.preventDefault();
+                                if (selectedPoints.includes(thisPoint.index)) {
+                                    selectedPoints = arrayRemove(selectedPoints, thisPoint.index);
+                                } else {
+                                    selectedPoints.push(thisPoint.index);
+                                }
+                                $("#dellist").text("Points to delete: " + selectedPoints.toString());
+
+                                allSeries.forEach(function (ser) {
+                                    var point = ser.points[thisIndex];
+
+                                    if (point.selected) {
+                                        point.select(false, true);
+                                    } else {
+                                        point.select(true, true);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            },
+            series: [{
+                type: 'scatter'
+            }],
+            exporting: {
+                enabled: false
+            }
+        };
+        var colorlist = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+            '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#800000', '#aaffc3',
+            '#808000', '#ffd8b1', '#000075', '#808080'
+        ]
+        $("#viewbtn").click(function (e) {
+            e.preventDefault();
+            $("#dellist").text("Points to delete: ");
+            chart1 = ""
+            selectedPoints = [];
+            var rawtestidsstring = "{% for testid in testids %}{{testid}},{% endfor %}".slice(0, -1);
+            rawtestids = rawtestidsstring.split(",");
+            for (var i = 0; i < rawtestids.length; i++) {
+                rawtestids[i] = +rawtestids[i];
+            }
+
+            var flowfield = $("#flowfield").children("option:selected").val();
+            var flowunits = $("#flowunits").children("option:selected").val();
+            var headfield = $("#headfield").children("option:selected").val();
+            var headunits = $("#headunits").children("option:selected").val();
+            var powerfield = $("#powerfield").children("option:selected").val();
+            var powerunits = $("#powerunits").children("option:selected").val();
+            var tempfield = $("#tempfield").children("option:selected").val();
+            var tempunits = $("#tempunits").children("option:selected").val();
+            var rpmfield = $("#rpmfield").children("option:selected").val();
+            $.getJSON(
+                "{% url 'datareducetabledata' %}?rawtestids=" + rawtestidsstring + "&flowfield=" +
+                flowfield + "&flowunits=" + flowunits + "&headfield=" + headfield + "&headunits=" +
+                headunits + "&powerfield=" + powerfield + "&powerunits=" + powerunits +
+                "&tempfield=" + tempfield + "&tempunits=" + tempunits + "&rpmfield=" + rpmfield,
+                function (data) {
+                    chart1data = [];
+                    testdata = data.testdata;
+                    var colordata = [];
+                    for (var i = 0; i < data.chartdata.length; i++) {
+                        chart1data.push({
+                            x: data.chartdata[i][0],
+                            y: data.chartdata[i][1],
+                            marker: {
+                                fillColor: colorlist[data.chartdata[i][2] % 17]
+                            }
+                        });
+                    }
+                    basechartoptions.series[0].data = chart1data;
+                    basechartoptions.xAxis.title = {
+                        text: 'Flow'
+                    };
+                    basechartoptions.yAxis.title = {
+                        text: 'Head'
+                    };
+                    chart1 = Highcharts.chart('chart1', basechartoptions);
+                });
+        });
+        $("#clbtn").click(function (e) {
+            e.preventDefault();
+            $("#dellist").text("Points to delete: ");
+            chart1.series[0].points[0].select(false);
+            selectedPoints = [];
+        });
+        $("#delbtn").click(function (e) {
+            e.preventDefault();
+            selectedPoints.sort();
+            selectedPoints.reverse();
+            $.each(selectedPoints, function (i, index) {
+                chart1data[index] = null;
+                console.log("Deleting: " + JSON.stringify(testdata[index]));
+                testdata.splice(index, 1);
+            });
+            chart1.series[0].update({
+                data: chart1data
+            }, true)
+            $("#dellist").text("Points to delete: ");
+            selectedPoints = [];
+        });
+        var form1 = $("#form1");
+        form1.validate({
+            onfocusout: function (element) {
+                $(element).valid()
+            }
+        });
+        $(':input[name="testname"]').rules("add", {
+            "remote": {
+                url: "{% url 'testnamevalidate' %}",
+                type: "post",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: {
+                    testname: function () {
+                        return $(':input[name="testname"]').val();
+                    }
+                }
+            }
+        });
+        $("#loaddatabtn").click(function (e) {
+            e.preventDefault;
+            var isValid = form1.valid();
+            if (isValid) {
+                $.ajax({
+                    type: 'POST',
+                    url: "{% url 'addtoreduceddatabase' %}",
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    data: $('#form1').serialize() + "&testdata=" + JSON.stringify(testdata) +
+                        "&source=" + rawtestids,
+                    success: function (data) {
+                        if (data.result == "success") {
+                            Swal.fire({
+                                type: 'success',
+                                title: 'Success',
+                                text: data.testname + ' added to database.'
+                            });
+                        }
+                    }
+
+                });
+            } else {
+                Swal.fire({
+                    type: 'error',
+                    title: 'Failed',
+                    text: 'Check the Form Fields. Test name has to be unique.'
+                });
+            }
+        });
+
+
+    });
+</script>
+{% endblock content%}

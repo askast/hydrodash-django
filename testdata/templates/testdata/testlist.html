@@ -1,0 +1,369 @@
+{% extends "profiles/stislabase.html" %} {% block extrahead %}
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css"
+/>
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/select/1.3.0/css/select.bootstrap4.min.css"
+/>
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/responsive/1.0.7/css/responsive.dataTables.min.css"
+/>
+
+<script
+    src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/select/1.3.0/js/dataTables.select.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/select/1.3.0/js/select.bootstrap4.min.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/plug-ins/1.10.19/dataRender/datetime.js"
+    defer
+    type="text/javascript"
+></script>
+<script
+    src="https://cdn.datatables.net/responsive/1.0.7/js/dataTables.responsive.min.js"
+    defer
+    type="text/javascript"
+></script>
+
+{% endblock %} {% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Raw Tests Lists</h1>
+            {% comment %}
+            <h1>, {{ servername }}</h1>
+            {% endcomment %}
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active">
+                    <a href="#">Dashboard</a>
+                </div>
+                <div class="breadcrumb-item"><a href="#">Raw Test Data</a></div>
+                <div class="breadcrumb-item">Test List</div>
+            </div>
+        </div>
+
+        <div class="section-body">
+            <h2 class="section-title">Test Databases</h2>
+            <p class="section-lead">
+                Links to the raw data databases that the test lab data
+                aquisition system writes to. Click
+                <a href="/testdata?refresh=True">here </a>to refresh the
+                database.
+            </p>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Commercial Efficiency Tests</h4>
+                        </div>
+                        <div class="card-body">
+                            <table
+                                class="table table-hover responsive"
+                                id="table1"
+                            >
+                                <thead>
+                                    <th>ID</th>
+                                    <th>Test Rescord Name</th>
+                                    <th>Date</th>
+                                    <th>Data Reduced</th>
+                                </thead>
+                            </table>
+                        </div>
+                        <div class="card-footer">
+                            <a href="#" id="reduce-btn1" class="btn btn-primary"
+                                >Reduce</a
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Commercial Standard Performance Tests</h4>
+                        </div>
+                        <div class="card-body">
+                            <table
+                                class="table table-hover responsive"
+                                id="table2"
+                            >
+                                <thead>
+                                    <th>ID</th>
+                                    <th>Test Rescord Name</th>
+                                    <th>Date</th>
+                                    <th>Data Reduced</th>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Residential Stand 1 Tests</h4>
+                        </div>
+                        <div class="card-body">
+                            <table
+                                class="table table-hover responsive"
+                                id="table3"
+                            >
+                                <thead>
+                                    <th>ID</th>
+                                    <th>Test Rescord Name</th>
+                                    <th>Date</th>
+                                    <th>Data Reduced</th>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Residdential Stand 2 Tests</h4>
+                        </div>
+                        <div class="card-body">
+                            <table
+                                class="table table-hover responsive"
+                                id="table4"
+                            >
+                                <thead>
+                                    <th>ID</th>
+                                    <th>Test Rescord Name</th>
+                                    <th>Date</th>
+                                    <th>Data Reduced</th>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Commercial Ouside Stand Tests</h4>
+                        </div>
+                        <div class="card-body">
+                            <table
+                                class="table table-hover responsive"
+                                id="table5"
+                            >
+                                <thead>
+                                    <th>ID</th>
+                                    <th>Test Rescord Name</th>
+                                    <th>Date</th>
+                                    <th>Data Reduced</th>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    Path: {{ path }}
+</div>
+
+<script>
+    $(document).ready(function() {
+        var table1 = $('#table1').DataTable({
+            autoWidth: false,
+            select: {
+                style: 'multi'
+            },
+            order: [[0, 'desc']],
+            columnDefs: [
+                {
+                    className: 'text-center',
+                    targets: [0, 3]
+                },
+                {
+                    render: function(data, type, row) {
+                        return data === 'True'
+                            ? (data = '<span class="true">✔</span>')
+                            : (data = '<span class="false">✘</span>');
+                    },
+                    targets: 3
+                },
+                {
+                    targets: 2,
+                    render: $.fn.dataTable.render.moment(
+                        'YYYY-MM-DD HH:mm:ss+00:00',
+                        'MMMM Do YYYY, h:mm a'
+                    )
+                }
+            ],
+            responsive: true,
+            searching: true,
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            ajax: "{% url 'rawtestlist-json' %}?testtype=CE"
+        });
+        var table2 = $('#table2').dataTable({
+            autoWidth: false,
+            order: [[0, 'desc']],
+            columnDefs: [
+                {
+                    className: 'text-center',
+                    targets: [0, 3]
+                },
+                {
+                    render: function(data, type, row) {
+                        return data === 'True'
+                            ? (data = '<span class="true">✔</span>')
+                            : (data = '<span class="false">✘</span>');
+                    },
+                    targets: 3
+                },
+                {
+                    targets: 2,
+                    render: $.fn.dataTable.render.moment(
+                        'YYYY-MM-DD HH:mm:ss+00:00',
+                        'MMMM Do YYYY, h:mm a'
+                    )
+                }
+            ],
+            searching: true,
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            ajax: "{% url 'rawtestlist-json' %}?testtype=CP"
+        });
+        var table3 = $('#table3').dataTable({
+            autoWidth: false,
+            order: [[0, 'desc']],
+            columnDefs: [
+                {
+                    className: 'text-center',
+                    targets: [0, 3]
+                },
+                {
+                    render: function(data, type, row) {
+                        return data === 'True'
+                            ? (data = '<span class="true">✔</span>')
+                            : (data = '<span class="false">✘</span>');
+                    },
+                    targets: 3
+                },
+                {
+                    targets: 2,
+                    render: $.fn.dataTable.render.moment(
+                        'YYYY-MM-DD HH:mm:ss+00:00',
+                        'MMMM Do YYYY, h:mm a'
+                    )
+                }
+            ],
+            searching: true,
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            ajax: "{% url 'rawtestlist-json' %}?testtype=RS1"
+        });
+        var table4 = $('#table4').dataTable({
+            autoWidth: false,
+            order: [[0, 'desc']],
+            columnDefs: [
+                {
+                    className: 'text-center',
+                    targets: [0, 3]
+                },
+                {
+                    render: function(data, type, row) {
+                        return data === 'True'
+                            ? (data = '<span class="true">✔</span>')
+                            : (data = '<span class="false">✘</span>');
+                    },
+                    targets: 3
+                },
+                {
+                    targets: 2,
+                    render: $.fn.dataTable.render.moment(
+                        'YYYY-MM-DD HH:mm:ss+00:00',
+                        'MMMM Do YYYY, h:mm a'
+                    )
+                }
+            ],
+            searching: true,
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            ajax: "{% url 'rawtestlist-json' %}?testtype=RS2"
+        });
+        var table5 = $('#table5').dataTable({
+            autoWidth: false,
+            order: [[0, 'desc']],
+            columnDefs: [
+                {
+                    className: 'text-center',
+                    targets: [0, 3]
+                },
+                {
+                    render: function(data, type, row) {
+                        return data === 'True'
+                            ? (data = '<span class="true">✔</span>')
+                            : (data = '<span class="false">✘</span>');
+                    },
+                    targets: 3
+                },
+                {
+                    targets: 2,
+                    render: $.fn.dataTable.render.moment(
+                        'YYYY-MM-DD HH:mm:ss+00:00',
+                        'MMMM Do YYYY, h:mm a'
+                    )
+                }
+            ],
+            searching: true,
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            ajax: "{% url 'rawtestlist-json' %}?testtype=CO"
+        });
+        $('#reduce-btn1').click(function() {
+            var count = table1.rows('.selected').count();
+            var testids = '';
+            for (i = 0; i < count; i++) {
+                console.log(table1.rows('.selected').data()[i][0]);
+                testids += table1.rows('.selected').data()[i][0] + ',';
+            }
+            window.location =
+                "{% url 'testdatareduce' %}?rawtestids=" + testids.slice(0, -1);
+        });
+
+        table1.on('dblclick', 'tr', function() {
+            var id = table1.row(this).data()[0];
+            console.log(id);
+            window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
+        });
+    });
+</script>
+{% endblock content%}

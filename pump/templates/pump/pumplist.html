@@ -1,0 +1,121 @@
+{% extends "profiles/stislabase.html"%} 
+{% block content %}
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Pumps Listing</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active">
+                    <a href="#">Dashboard</a>
+                </div>
+                <div class="breadcrumb-item"><a href="#">Layout</a></div>
+                <div class="breadcrumb-item">Default Layout</div>
+            </div>
+        </div>
+
+        <div class="section-body">
+            {% for series, models in pumpmodels.items %}
+            <h2 class="section-title">{{ series }}</h2>
+            <div class="row">
+                {% for model, designits in models.items %} 
+                {% for designit, rpms in designits.items %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div
+                        class="card card-{% if rpms.hasalldata == 'True' %}success{% else %}warning{% endif %}"
+                    >
+                        <div class="card-header">
+                            <h4>{{ series }}{{ model }}{{ designit }}</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="accordion">
+                                {% for rpm, trims in rpms.items %}
+                                    {% if rpm != 'hasalldata' %}
+                                        <div class="accordion">
+                                            <div
+                                                class="accordion-header collapsed"
+                                                role="button"
+                                                data-toggle="collapse"
+                                                data-target="#{{ series }}{{ model }}{{ designit }}-body-{{ forloop.counter }}"
+                                                aria-expanded="false"
+                                            >
+                                                <h4 class="h3 d-inline-block">
+                                                    {{ rpm }}
+                                                </h4>
+                                                {% if trims.peicl != "0" %}
+                                                <span
+                                                    class="badge badge-secondary float-right align-top"
+                                                    >{{ trims.peicl|floatformat:2 }}</span
+                                                >
+                                                <span
+                                                    class="badge badge-info float-right align-top"
+                                                    >{{ trims.peivl|floatformat:2 }}</span
+                                                >
+                                                {% endif %}
+                                            </div>
+                                            <div
+                                                class="accordion-body collapse"
+                                                id="{{ series }}{{ model }}{{ designit }}-body-{{ forloop.counter }}"
+                                                data-parent="#accordion">
+                                                {% for trim, peis in trims.items %} 
+                                                    {% if trim != 'hasalldata' and trim != 'peicl' and trim != 'peivl' %}
+                                                        {% if peis == 'True' %}
+                                                        <div class="text-success mb-2">
+                                                            {{ trim }}"
+                                                        </div>
+                                                        {% else %}
+                                                        <div class="text-warning mb-2">
+                                                            {{ trim }}"
+                                                        </div>
+                                                        {% endif %} 
+                                                    {% endif %}
+                                                {% endfor %}
+                                                <a
+                                                    href="#"
+                                                    class="btn {% if trims.hasalldata == 'False' %}disabled{% endif %} btn-primary btn-block"
+                                                    id="btn-{{ series }}-{{ model }}-{{ designit }}-{{ rpm }}"
+                                                    >View Submittal Curve</a
+                                                >
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %} 
+                {% endfor %}
+            </div>
+
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.btn').click(function(e) {
+            e.preventDefault();
+            var values = $(this)
+                .attr('id')
+                .split('-');
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'submittalcurvegen' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: "series=" + $("#pumpseries")
+                    .val() + "&model=" + $("#pumpmodel").val() + "&design=" + $(
+                        "#designiteration").val() + "&rpm=" + $("#rpm").val(),
+                success: function (data) {
+                    if (data.status == 'success') {
+                        Swal.fire('Success', 'Added Data Succesfully.', 'success');
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock content%}
