@@ -1,18 +1,25 @@
 from collections import defaultdict as dd
 from collections import OrderedDict
 import collections
+from datetime import datetime
 from copy import deepcopy
+from io import BytesIO, StringIO
+import base64
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import lines
 from matplotlib.cbook import get_sample_data
 import matplotlib.tri as tri
 from scipy.interpolate import InterpolatedUnivariateSpline
 
+from django.http import JsonResponse
 from django.views.generic.base import TemplateView
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.conf import settings
 
+from marketingdata.models import MarketingCurveDetail, MarketingCurveData
 from .models import Pump, PumpTrim, NPSHData
-from marketingdata.models import MarketingCurveDetail
 
 
 class PumpListView(TemplateView):
@@ -27,7 +34,10 @@ class PumpListView(TemplateView):
             "pump__speed",
             "trim",
             "marketing_data",
+            "pump"
         )
+        npsh_list = list(NPSHData.objects.all().values_list('pump', flat=True).distinct())
+
         nested_raw_trims = dd(lambda: dd(lambda: dd(lambda: dd(lambda: dd(list)))))
         for m in trims_list:
             if m["marketing_data"]:
@@ -45,12 +55,12 @@ class PumpListView(TemplateView):
                             id=m["marketing_data"]
                         ).first(),
                         "peivl",
-                    ),
+                    ), m["pump"]
                 ]
             else:
                 nested_raw_trims[m["pump__series"]][m["pump__pump_model"]][
                     m["pump__design_iteration"]
-                ][m["pump__speed"]][m["trim"]] = ["fail", "fail"]
+                ][m["pump__speed"]][m["trim"]] = ["fail", "fail", m["pump"]]
 
         nested_trims = deepcopy(nested_raw_trims)
 
@@ -64,6 +74,11 @@ class PumpListView(TemplateView):
                         ] = True
                         nested_trims[series][pumpmodel][design][speed]["peicl"] = 0
                         nested_trims[series][pumpmodel][design][speed]["peivl"] = 0
+                        if trims[list(trims.keys())[0]][2] in npsh_list:
+                            nested_trims[series][pumpmodel][design][speed]["NPSH"] = True
+                        else:
+                            nested_trims[series][pumpmodel][design][speed]["NPSH"] = False
+
                         for trim, peis in trims.items():
                             if peis[0] is "fail":
                                 nested_trims[series][pumpmodel][design][
@@ -88,11 +103,11 @@ class PumpListView(TemplateView):
                                     ] = peis[1]
                                 else:
                                     if (
-                                        "peicl"
-                                        not in nested_trims[series][pumpmodel][design][
-                                            speed
-                                        ].keys()
-                                    ):
+                                            "peicl"
+                                            not in nested_trims[series][pumpmodel][design][
+                                                speed
+                                            ].keys()
+                                        ):
                                         nested_trims[series][pumpmodel][design][speed][
                                             "peicl"
                                         ] = 0
@@ -102,7 +117,7 @@ class PumpListView(TemplateView):
 
         nested_trims = sortOD(convert(default_to_regular(nested_trims)))
 
-        print(nested_trims)
+        # print(nested_trims)
         context = {
             "name": self.request.user.get_full_name(),
             "title1": "Hydro Dash",
@@ -156,7 +171,6 @@ def createSubmittalCurves(request):
 
         ax_m.figure.canvas.draw()
 
-
     def convert_ax_npsh_to_kpa(ax_npsh):
         """
         Update second axis according with first axis.
@@ -178,27 +192,35 @@ def createSubmittalCurves(request):
     pumpmodel = request.POST.get("model", None)
     design = request.POST.get("design", None)
     rpm = request.POST.get("rpm", None)
-    curveObjs = PumpTrim.objects.filter(
-        pump__series=series,
-        pump__pump_model=pumpmodel,
-        pump__design_iteration=design,
-        pump__speed=rpm,
-    ).values(
-        "trim",
-        "marketing_data"
+
+    max_motor_hp_string = request.POST.get("maxhp", None)
+    min_motor_hp_string = request.POST.get("minhp", None)
+    eff_levels_string = request.POST.get("efflevels", None)
+    power_manual_locations_string = request.POST.get("powerlocs", None)
+    x_axis_limit_string = request.POST.get("xlim", None)
+    y_axis_limit_string = request.POST.get("ylim", None)
+
+    curveObjs = (
+        PumpTrim.objects.filter(
+            pump__series=series,
+            pump__pump_model=pumpmodel,
+            pump__design_iteration=design,
+            pump__speed=rpm,
+        )
+        .order_by("marketing_data__imp_dia")
+        .values("trim", "marketing_data")
     )
     npsh_data = NPSHData.objects.filter(
         pump__series=series,
         pump__pump_model=pumpmodel,
         pump__design_iteration=design,
         pump__speed=rpm,
-    ).values(
-        "flow",
-        "npsh"
-    )
+    ).values("flow", "npsh")
     diameters = []
     curveids = []
-    for trim, curve in curveObjs:
+    for curveObj in curveObjs:
+        trim = curveObj["trim"]
+        curve = curveObj["marketing_data"]
         diameters.append(trim)
         curveids.append(curve)
 
@@ -212,9 +234,11 @@ def createSubmittalCurves(request):
     peicl = 0
     peivl = 0
     for curve in curveids:
-        bep_flow.append(getattr(curve, "bep_flow"))
-        bep_head.append(getattr(curve, "bep_head"))
-        bep_eff.append(getattr(curve, "bep_efficiency"))
+        # print(f'curve:{curve}')
+        curve = MarketingCurveDetail.objects.filter(id=curve).first()
+        bep_flow.append(getattr(curve, "bep_flow") * 4.402862)
+        bep_head.append(getattr(curve, "bep_head") * 3.28084)
+        bep_eff.append(getattr(curve, "bep_efficiency") * 100)
         head_polys.append(np.poly1d(getattr(curve, "headcoeffs")))
         eff_polys.append(np.poly1d(getattr(curve, "effcoeffs")))
         eff_coeffs.append(getattr(curve, "effcoeffs"))
@@ -225,34 +249,157 @@ def createSubmittalCurves(request):
             peicl = temp_peicl
             peivl = temp_peivl
 
-    flow_min_cutoffs = [0, 0, 0, 0, 0]
-    flow_max_cutoffs = [210, 190, 175, 150, 125]
-
-    sp_gr_position = [5, 5]
-    req_npsh_position = [500, 5]
-    eff_levels = np.array([55, 60, 64, 66, 68, 69], dtype=np.float64)
-    power_levels = np.array([3, 5, 7.5, 10], dtype=np.float64)
-    power_manual_locations = [(125, 30), (165, 60), (190, 65), (175, 160)]
-    x_axis_limits = [0, 225]
-    y_axis_limits = [0, 200]
-    efficiency_plot_scale = 0.35
-    # Lower it to move left. Use .1 if it doesnt interfere with other axis tags
-    l_per_sec_offset = 0.08
-    diameter_label_flow_offset = 2
-    diameter_label_head_offset = 4
-    max_eff_insert = True  # Set this to True or False
-
-    plot_flows = [np.linspace(flow_min, flow_max, 200) for flow_min, flow_max in zip(flow_min_cutoffs, flow_max_cutoffs)]
-    plot_heads = [head_poly(plot_flow) for plot_flow, head_poly in zip(plot_flow, head_polys)]
-    plot_effs = [eff_poly(plot_flow) for plot_flow, eff_poly in zip(plot_flow, eff_polys)]
-    plot_powers = [power_poly(plot_flow) for plot_flow, power_poly in zip(plot_flow, power_polys)]
-    # plot_effs = []
-    # plot_pows = []
-    # beps = []
-
-    logo = plt.imread(get_sample_data("../profiles/statuc/profiles/img/logo.png"))
-
     npsh_data = np.array([[point["flow"], point["npsh"]] for point in npsh_data])
+    npsh_data = npsh_data[np.argsort(npsh_data[:, 0])]
+    # print(f'NPSH_DATA: {npsh_data}')
+
+    bep_flow = bep_flow[-1]
+    bep_head = bep_head[-1]
+    bep_eff = bep_eff[-1]
+    full_trim_flow_min = 0
+    full_trim_flow_max = (
+        MarketingCurveData.objects.filter(
+            curveid=MarketingCurveDetail.objects.filter(id=curveids[-1]).first()
+        )
+        .order_by("-flow")
+        .values_list("flow", flat=True)[0]
+        * 4.402862
+    )
+    isopower_cutoff_percent = 15
+    curveno = getattr(
+        Pump.objects.filter(
+            series=series, pump_model=pumpmodel, design_iteration=design, speed=rpm
+        ).first(),
+        "curve_number",
+    )
+    curvedate = datetime.now().strftime(r"%B %d, %Y")
+    inletdia, dischargedia = PumpTrim.objects.filter(
+        pump__series=series,
+        pump__pump_model=pumpmodel,
+        pump__design_iteration=design,
+        pump__speed=rpm,
+    ).values_list(
+        "marketing_data__data_source__inlet_pipe_dia",
+        "marketing_data__data_source__discharge_pipe_dia",
+    )[
+        0
+    ]
+
+    inletdia = ("%f" % round_pipe_dia(inletdia)).rstrip("0").rstrip(".")
+    dischargedia = ("%f" % round_pipe_dia(dischargedia)).rstrip("0").rstrip(".")
+
+    std_motor_hps = [
+        0.5,
+        0.75,
+        1,
+        1.5,
+        2,
+        3,
+        5,
+        7.5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        40,
+        50,
+        60,
+        75,
+        100,
+        125,
+        150,
+        200,
+        250,
+        300,
+        350,
+        400,
+        450,
+        500,
+        600,
+        700,
+        800,
+        900,
+        1000,
+        1250,
+        1500,
+        1750,
+        2000,
+        2250,
+        2500,
+        3000,
+    ]
+
+    max_motor_hp = 3
+    min_motor_hp = 1
+    eff_levels = np.array([60, 65, 70, 73, 75, 77], dtype=np.float64)
+    power_manual_locations = [(150, 14), (175, 18), (185, 25), (200, 40)]
+    x_axis_limits = [0, 225]
+    y_axis_limits = [0, 65]
+
+    # Lower it to move left. Use .1 if it doesnt interfere with other axis tags
+    l_per_sec_offset = 0.04
+
+    diameter_label_flow_offset = 0.01 * bep_flow
+    diameter_label_head_offset = 0.02 * bep_head
+
+    sp_gr_position = [bep_flow * 0.04, bep_head * 0.05]
+    req_npsh_position = [bep_flow * 0.5, np.amax(npsh_data.T[1]) / 2]
+    power_levels = np.array(
+        [hp for hp in std_motor_hps if min_motor_hp <= hp <= max_motor_hp],
+        dtype=np.float64,
+    )
+
+    a_max = head_polys[-1](full_trim_flow_max).item() / pow(full_trim_flow_max, 2)
+    temp_flows = np.linspace(0, (full_trim_flow_max + 5), 100)
+    temp_poly_heads_max = np.power(temp_flows, 2) * a_max
+    # print(f'polyheads: {poly_heads}')
+    curve_heads = [head_polys[i](temp_flows) for i in range(len(head_polys))]
+    # curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
+    # curve_effs = [feffs[i](temp_flows) for i in range(len(fheads))]
+    intercept_flowheads_max = [
+        interpolated_intercept(temp_flows, temp_poly_heads_max, curve_heads[i])
+        for i in range(len(head_polys))
+    ]
+
+    if full_trim_flow_min > 0:
+        a_min = head_polys[-1](full_trim_flow_min).item() / pow(full_trim_flow_min, 2)
+        temp_flows = np.linspace(0, (full_trim_flow_min + 5), 100)
+        temp_poly_heads_min = np.power(temp_flows, 2) * a_min
+        # print(f'polyheads: {poly_heads}')
+        curve_heads = [head_polys[i](temp_flows) for i in range(len(head_polys))]
+        # curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
+        # curve_effs = [feffs[i](temp_flows) for i in range(len(fheads))]
+        intercept_flowheads_min = [
+            interpolated_intercept(temp_flows, temp_poly_heads_min, curve_heads[i])
+            for i in range(len(head_polys))
+        ]
+    else:
+        intercept_flowheads_min = [(0, 0) for i in range(len(head_polys))]
+
+    flow_min_cutoffs = []
+    flow_max_cutoffs = []
+    for ((min_flow, min_head), (max_flow, max_head)) in zip(
+            intercept_flowheads_min, intercept_flowheads_max
+        ):
+        flow_min_cutoffs.append(min_flow)
+        flow_max_cutoffs.append(max_flow)
+
+    plot_flows = [
+        np.linspace(flow_min, flow_max, 200)
+        for flow_min, flow_max in zip(flow_min_cutoffs, flow_max_cutoffs)
+    ]
+    plot_heads = [
+        head_poly(plot_flow) for plot_flow, head_poly in zip(plot_flows, head_polys)
+    ]
+    # plot_effs = [eff_poly(plot_flow) for plot_flow, eff_poly in zip(plot_flows, eff_polys)]
+
+    logo = plt.imread(
+        get_sample_data(
+            settings.BASE_DIR + staticfiles_storage.url("profiles/img/logo.png")
+        )
+    )
+
     plt.rc("font", family="Assistant")
     fig, (ax_npsh, ax_ft) = plt.subplots(
         2, sharex=True, gridspec_kw={"height_ratios": [1, 4], "hspace": 0.1}
@@ -280,12 +427,12 @@ def createSubmittalCurves(request):
     ax_ft.callbacks.connect("xlim_changed", convert_ax_ft_to_m)
     ax_npsh.callbacks.connect("ylim_changed", convert_ax_npsh_to_kpa)
     ax_npsh.callbacks.connect("ylim_changed", convert_ax_npsh_to_m)
-    x_npsh = np.linspace(np.amin(npsh_data[0]), np.amax(npsh_data[0]), 300)
-    npsh_spline = InterpolatedUnivariateSpline(npsh_data[0], npsh_data[1])
+    x_npsh = np.linspace(np.amin(npsh_data.T[0]), np.amax(npsh_data.T[0]), 300)
+    npsh_spline = InterpolatedUnivariateSpline(npsh_data.T[0], npsh_data.T[1])
     smooth_npsh = npsh_spline(x_npsh)
     ax_npsh.plot(x_npsh, smooth_npsh, color="k", linewidth=0.75)
 
-    [
+    for i in range(len(diameters)):
         ax_ft.plot(
             plot_flows[i],
             plot_heads[i],
@@ -294,8 +441,7 @@ def createSubmittalCurves(request):
             + '"({:1.0f}mm)'.format(diameters[i] * 25.4),
             linewidth=1.0,
         )
-        for i in range(len(diameters))
-    ]
+
     ax_ft.set_xlim(x_axis_limits)
     ax_ft.set_ylim(y_axis_limits)
     ax_ft.set_xlabel("FLOW IN GALLONS PER MINUTE", fontsize=15)
@@ -308,7 +454,12 @@ def createSubmittalCurves(request):
     ax_ft.grid(b=True, which="major", color="k", linestyle="-", linewidth=0.75)
     ax_ft.grid(b=True, which="minor", color="k", linestyle="-", linewidth=0.1)
     ax_ft.minorticks_on()
-    my_legend(ax_ft, diameter_label_flow_offset=diameter_label_flow_offset, plot_heads=plot_heads, diameter_label_head_offset=diameter_label_head_offset)
+    my_legend(
+        ax_ft,
+        diameter_label_flow_offset=diameter_label_flow_offset,
+        plot_heads=plot_heads,
+        diameter_label_head_offset=diameter_label_head_offset,
+    )
     ax_ft.text(
         sp_gr_position[0],
         sp_gr_position[1],
@@ -334,41 +485,53 @@ def createSubmittalCurves(request):
         va="bottom",
     )
 
-    [tick.label.set_fontsize(14) for tick in ax_ft.xaxis.get_major_ticks()]
-    [tick.label.set_fontsize(14) for tick in ax_ft.yaxis.get_major_ticks()]
+    for tick in ax_ft.xaxis.get_major_ticks():
+        tick.label.set_fontsize(14)
+    for tick in ax_ft.yaxis.get_major_ticks():
+        tick.label.set_fontsize(14)
 
     x1, x2 = ax_ft.get_xlim()
     ax_ft.set_xlim(0, x2)
     y1, y2 = ax_ft.get_ylim()
     ax_ft.set_ylim(0, y2 + 2)
 
-    eff_lab_x, eff_lab_y = efficiency_label_points(pch0=head_polys[0], poly_eff_coeffs_0=eff_coeffs[0], eff_levels=eff_levels, flow_min_cutoffs=flow_max_cutoffs, flow_max_cutoffs=flow_max_cutoffs)
-
-    flowpoints_for_eff_contour, headpoints_for_eff_contour, effpoints_for_eff_contour, flowpoints_for_pow_contour, headpoints_for_pow_contour, powpoints_for_pow_contour, = (
-        get_points_mesh(flow_max_cutoffs=flow_max_cutoffs, fheads=head_polys, feffs=eff_polys, fpowers=power_polys)
+    eff_lab_x, eff_lab_y = efficiency_label_points(
+        pch0=head_polys[-1],
+        poly_eff_coeffs_0=eff_coeffs[-1],
+        eff_levels=eff_levels,
+        flow_min_cutoffs=flow_min_cutoffs,
+        flow_max_cutoffs=flow_max_cutoffs,
+    )
+    # print(f'eff_labx:{eff_lab_x}\neff_lab_y:{eff_lab_y}')
+    flowpoints_for_eff_contour, headpoints_for_eff_contour, effpoints_for_eff_contour, flowpoints_for_pow_contour, headpoints_for_pow_contour, powpoints_for_pow_contour, = get_points_mesh(
+        flow_max_cutoffs=flow_max_cutoffs,
+        fheads=head_polys,
+        feffs=eff_polys,
+        fpowers=power_polys,
     )
 
     triang_eff = tri.Triangulation(
         flowpoints_for_eff_contour, headpoints_for_eff_contour
     )
 
-    fheadsmall = InterpolatedUnivariateSpline(plot_flows[-1], plot_heads[-1])
+    fheadsmall = InterpolatedUnivariateSpline(plot_flows[0], plot_heads[0])
     # Mask off unwanted triangles.
     xmid = np.array(flowpoints_for_eff_contour)[triang_eff.triangles].mean(axis=1)
     ymid = np.array(headpoints_for_eff_contour)[triang_eff.triangles].mean(axis=1)
     mask = np.where(ymid < fheadsmall(xmid), 1, 0)
     triang_eff.set_mask(mask)
 
-    CS_eff = ax_ft.tricontour(
+    ax_ft.tricontour(
         triang_eff,
         effpoints_for_eff_contour,
         levels=eff_levels,
         colors="k",
         linewidths=0.5,
     )
-    # eff_labels = ax_ft.clabel(CS_eff, inline=False, fontsize=6)
 
-    for flow, head, eff in zip(eff_lab_x, eff_lab_y, np.concatenate([eff_levels, eff_levels[::-1]])):
+    for flow, head, eff in zip(
+        eff_lab_x, eff_lab_y, np.concatenate([eff_levels, eff_levels[::-1]])
+    ):
         if eff.is_integer():
             eff_str = str(int(eff))
         else:
@@ -389,7 +552,7 @@ def createSubmittalCurves(request):
 
     # Mask off unwanted triangles.
     xmid_pow = np.array(flowpoints_for_pow_contour)[triang_pow.triangles].mean(axis=1)
-    mask_pow = np.where(xmid_pow < 25, 1, 0)
+    mask_pow = np.where(xmid_pow < bep_flow * isopower_cutoff_percent / 100, 1, 0)
     triang_pow.set_mask(mask_pow)
 
     CS_power = ax_ft.tricontour(
@@ -409,70 +572,135 @@ def createSubmittalCurves(request):
         )
 
     power_labels = ax_ft.clabel(
-        CS_power, inline=False, fontsize=8, manual=power_manual_locations, fmt=fmt
+        CS_power, inline=False, fontsize=10, manual=power_manual_locations, fmt=fmt
     )
-    [
+
+    for txt in power_labels:
         txt.set_bbox(dict(facecolor="white", edgecolor="none", pad=0))
-        for txt in power_labels
-    ]
 
     for c in CS_power.collections:
         c.set_dashes([(0, (6.0, 6.0))])
 
-    # newax = fig.add_axes([0.13, 0.79, 0.16, 0.16], anchor='SE', zorder=-1)
-    # newax.imshow(logo)
-    # newax.axis('off')
-    series = request.POST.get("series", None)
-    pumpmodel = request.POST.get("model", None)
-    design = request.POST.get("design", None)
-    rpm = request.POST.get("rpm", None)
+    newax = fig.add_axes([0.13, 0.81, 0.175, 0.175], anchor="SE", zorder=-1)
+    newax.imshow(logo)
+    newax.axis("off")
+
+    newax2 = fig.add_axes([0.31, 0.81, 0.8, 0.2], anchor="SE", zorder=-1)
+    newax2.axis("off")
+
+    x, y = np.array([[0.0, 0.65], [0.27, 0.27]])
+    line = lines.Line2D(x, y, lw=1, color="k")
+    newax2.add_line(line)
+
+    plt.gcf().text(
+        0.31,
+        0.905,
+        f"{series} Series | Model: {pumpmodel}{design} | {rpm} RPM",
+        fontsize=24,
+        weight="bold",
+    )
+    plt.gcf().text(
+        0.31,
+        0.875,
+        f'Curve No. {curveno} | {curvedate} | Min. Imp. Dia. {min(diameters)}" | Size {inletdia}x{dischargedia}x{max(diameters)}',
+        fontsize=14,
+        weight="normal",
+    )
+    plt.gcf().text(
+        0.31,
+        0.84,
+        f"Energy Efficiency Rating:",
+        fontsize=14,
+        weight="bold",
+        color="green",
+    )
+    plt.gcf().text(
+        0.515,
+        0.84,
+        r"Pump & Motor: $\mathregular{PEI_{CL}}$: "
+        + str(round(peicl, 2))
+        + r" | $\mathregular{ER_{CL}}$: xx",
+        fontsize=14,
+        weight="normal",
+        color="green",
+    )
+    plt.gcf().text(
+        0.515,
+        0.815,
+        r"Pump, Motor & Drive: $\mathregular{PEI_{VL}}$: "
+        + str(round(peivl, 2))
+        + r" | $\mathregular{ER_{VL}}$: xx",
+        fontsize=14,
+        weight="normal",
+        color="green",
+    )
+
+    fine_max_eff = bep_eff
+    fine_max_eff_flow = bep_flow
+    fine_max_eff_head = bep_head
+    ax_ft.plot(fine_max_eff_flow, fine_max_eff_head, marker="|", color="k")
+    ax_ft.text(
+        fine_max_eff_flow + 1,
+        fine_max_eff_head + 0.25,
+        "{:1.1f}".format(round_of_eff(fine_max_eff)).rstrip("0").rstrip(".") + "%",
+        rotation=45,
+        bbox=dict(facecolor="white", edgecolor="none", pad=0.0),
+        ha="left",
+        va="bottom",
+    )
+
+    for plot_flow, plot_head in zip(plot_flows, plot_heads):
+        ax_ft.plot(plot_flow, plot_head, "--", color="k", linewidth=0.5)
 
     name = f"{series}{pumpmodel}{design}_{rpm}RPM"
-    plt.gcf().text(0.3, 0.88, f"MODEL: {series}{pumpmodel}{design} {rpm}RPM", fontsize=20)
-
-    if max_eff_insert:
-        fine_max_eff = bep_eff[0]
-        fine_max_eff_flow = bep_flow[0]
-        fine_max_eff_head = bep_head[0]
-        ax_ft.plot(fine_max_eff_flow, fine_max_eff_head, marker="|", color="k")
-        ax_ft.text(
-            fine_max_eff_flow + 1,
-            fine_max_eff_head + 0.25,
-            "{:1.1f}".format(round_of_eff(fine_max_eff)).rstrip("0").rstrip(".") + "%",
-            rotation=45,
-            bbox=dict(facecolor="white", edgecolor="none", pad=0.0),
-            ha="left",
-            va="bottom",
-        )
-
-    for plot_flow, plot_head, plot_eff in zip(plot_flows, plot_heads, plot_effs):
-        ax_ft.plot(plot_flow, plot_head, "--", color="k", linewidth=0.5)
-        # pce = poly1d(efficiency_coefficients)
-        # ax_ft.plot(Flow, pce(Flow)*efficiency_plot_scale,
-        #             '--', color='g', linewidth=0.5)
-
-    plt.savefig(f"media/Outputs/{name}.eps", format="eps", dpi=1000)
-    print("Outputs\\" + name + ".eps file created")
-    plt.savefig(f"media/Outputs/{name}.jpg", format="jpg", dpi=1000)
+    plt.savefig(
+        settings.BASE_DIR + f"/media/Outputs/{name}.jpg", format="jpg", dpi=1000
+    )
     print("Outputs\\" + name + ".jpg file created")
-    # with open('Outputs\\'+base_name+'.json', "w") as outfile:
-    #     json.dump({'head_coeff':ph, 'eff_coeff':pe.tolist()}, outfile, indent=4)
+
+    jpg_buffer = BytesIO()
+    plt.savefig(jpg_buffer, format="png", dpi=1000, bbox_inches='tight')
+    jpg_buffer.seek(0)
+    image_jpg = jpg_buffer.getvalue()
+    jpg_buffer.close()
+    pdf_buffer = BytesIO()
+    plt.savefig(pdf_buffer, format="pdf", dpi=1000, bbox_inches='tight')
+    pdf_buffer.seek(0)
+    image_pdf = pdf_buffer.getvalue()
+    pdf_buffer.close()
+    svg_buffer = BytesIO()
+    plt.savefig(svg_buffer, format="svg", dpi=1000, bbox_inches='tight')
+    svg_buffer.seek(0)
+    image_svg = svg_buffer.getvalue()
+    svg_buffer.close()
+
+    graphic = base64.b64encode(image_svg)
+    graphic = graphic.decode("utf-8")
+
+    context = {"status": "success", "plot": graphic}
+
+    return JsonResponse(context)
 
 
-def efficiency_label_points(pch0, poly_eff_coeffs_0, eff_levels, flow_min_cutoffs, flow_max_cutoffs):
+def efficiency_label_points(
+        pch0, poly_eff_coeffs_0, eff_levels, flow_min_cutoffs, flow_max_cutoffs
+    ):
     flow = []
     head = []
     for eff in eff_levels:
-        poly_eff_coeffs_0[-1] -= eff
-        root = np.poly1d(poly_eff_coeffs_0).roots
+        # print(f'polyeffcoeffs:{poly_eff_coeffs_0}')
+        # print(f'eff:{eff}')
+        adjusted_poly_eff_coeffs_0 = deepcopy(poly_eff_coeffs_0)
+        adjusted_poly_eff_coeffs_0[-1] -= eff / 100
+        root = np.poly1d(adjusted_poly_eff_coeffs_0).roots
         root = root[np.isreal(root)]
         # print("Roots: ", end="")
         # print(root)
         for item in root:
-            if (
-                item > flow_min_cutoffs[0]
-                and item < flow_max_cutoffs[0]
-            ):
+            # print(f'roots:{item}')
+            # print(f'min:{flow_min_cutoffs[-1]}')
+            # print(f'max:{flow_max_cutoffs[-1]}')
+            if flow_min_cutoffs[-1] < item < flow_max_cutoffs[-1]:
                 flow.append(np.real(item))
                 head.append(np.real(np.poly1d(pch0)(item)))
     flow = np.array(flow)
@@ -505,6 +733,15 @@ def gpm2lps(flow):
 
 def round_of_eff(number):
     return round(number * 2) / 2
+
+
+def round_pipe_dia(x):
+    return 0.5 * round(x / 0.5)
+
+
+# def intercept(x, y1, y2):
+#     idx = np.argwhere(np.diff(np.sign(y1 - y2))).flatten()
+#     return (x[idx], y1[idx])
 
 
 def interpolated_intercept(x, y1, y2):
@@ -552,20 +789,24 @@ def interpolated_intercept(x, y1, y2):
         ((x[idx], y2[idx])),
         ((x[idx + 1], y2[idx + 1])),
     )
-    return xc, yc
+    # print(f'xc:{xc}')
+    # print(f'yc:{yc}')
+    return xc.item(0), yc.item(0)
 
 
 def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
 
-    top_flows = list(np.linspace(0, flow_max_cutoffs[0], 81))[1:]
-    bottom_flows = list(np.linspace(0, flow_max_cutoffs[-1], 81))[1:]
+    top_flows = list(np.linspace(0, flow_max_cutoffs[-1], 81))[1:]
+    bottom_flows = list(np.linspace(0, flow_max_cutoffs[0], 81))[1:]
+    # print(f'top flows:{top_flows}\nbottom flows:{bottom_flows}')
 
     polys = [
-        fheads[0](top_flow1).item() / math.pow(top_flow1, 2) for top_flow1 in top_flows
+        fheads[-1](top_flow1).item() / math.pow(top_flow1, 2) for top_flow1 in top_flows
     ]
 
-    top_heads = [fheads[0](top_flow1).item() for top_flow1 in top_flows]
-    bottom_heads = [fheads[-1](bottom_flow1).item() for bottom_flow1 in bottom_flows]
+    top_heads = [fheads[-1](top_flow1).item() for top_flow1 in top_flows]
+    bottom_heads = [fheads[0](bottom_flow1).item() for bottom_flow1 in bottom_flows]
+    # print(f'top heads:{top_heads}\nbottom heads:{bottom_heads}')
 
     flowmesh_for_eff_contour = []
     headmesh_for_eff_contour = []
@@ -576,20 +817,20 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
     powermesh_for_power_contour = []
 
     for a, top_flow in zip(polys, top_flows):
-        # print(
-        #     f'polys: {polys}\ntop_flows: {top_flows}\ntop_heads: {top_heads}')
-        temp_flows = np.linspace(0, top_flow + 5, 100)
+        # print(f'polys: {polys}\ntop_flows: {top_flows}')
+        temp_flows = np.linspace(0, (top_flow + 5), 100)
         poly_heads = np.power(temp_flows, 2) * a
+        # print(f'polyheads: {poly_heads}')
         curve_heads = [fheads[i](temp_flows) for i in range(len(fheads))]
-        curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
-        curve_effs = [feffs[i](temp_flows) for i in range(len(fheads))]
+        # curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
+        # curve_effs = [feffs[i](temp_flows) for i in range(len(fheads))]
         intercept_flowheads = [
             interpolated_intercept(temp_flows, poly_heads, curve_heads[i])
             for i in range(len(fheads))
         ]
         # print(f"intercepts_flowheads: {intercept_flowheads}")
 
-        temp_poly_flows = np.linspace(intercept_flowheads[-1][0], top_flow, 20)
+        temp_poly_flows = np.linspace(intercept_flowheads[0][0], top_flow, 20)
         temp_poly_heads = np.power(temp_poly_flows, 2) * a
 
         temp_intercept_flows = [
@@ -613,28 +854,31 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
         ):
             flowmesh_for_eff_contour.append(flowpoint.item())
             headmesh_for_eff_contour.append(headpoint.item())
-            effmesh_for_eff_contour.append(effpoint.item())
-
-    top_flows = list(np.linspace(0, flow_max_cutoffs[0], 81))[1:]
+            effmesh_for_eff_contour.append(effpoint.item() * 100)
+    # print(f'eff_mesh:{effmesh_for_eff_contour}')
+    top_flows = list(np.linspace(0, flow_max_cutoffs[-1], 81))[1:]
 
     polys = [
-        fheads[0](top_flow1).item() / math.pow(top_flow1, 2) for top_flow1 in top_flows
+        fheads[-1](top_flow1).item() / math.pow(top_flow1, 2) for top_flow1 in top_flows
     ]
-
+    # [
+    #     print(f'topflow:{top_flow1}; tophead:{fheads[-1](top_flow1).item()}') for top_flow1 in top_flows
+    # ]
     max_head = max(top_heads)
     min_head = min(bottom_heads)
 
     for a, top_flow in zip(polys, top_flows):
         # print(
         #     f'polys: {polys}\ntop_flows: {top_flows}\ntop_heads: {top_heads}')
+        # print(f'max_head:{max_head}; a:{a}')
         poly_max_flow = math.sqrt(max_head / a)
         poly_min_flow = math.sqrt(min_head / a)
-        temp_flows = np.linspace(0, poly_max_flow, 100)
+        temp_flows = np.linspace(0, (poly_max_flow + 5), 100)
         poly_heads = np.power(temp_flows, 2) * a
         curve_heads = [fheads[i](temp_flows) for i in range(len(fheads))]
-        curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
-        curve_effs = [feffs[i](temp_flows) for i in range(len(fheads))]
-        intercept_flowheads = [
+        # curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
+        # curve_effs = [feffs[i](temp_flows) for i in range(len(fheads))]
+        flowheads = [
             interpolated_intercept(temp_flows, poly_heads, curve_heads[i])
             for i in range(len(fheads))
         ]
@@ -643,9 +887,7 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
         temp_poly_flows = np.linspace(poly_min_flow, poly_max_flow, 20)
         temp_poly_heads = np.power(temp_poly_flows, 2) * a
 
-        temp_intercept_flows = [
-            np.take(intercept_flowheads[i][0], 0) for i in range(len(fheads))
-        ]
+        temp_intercept_flows = [np.take(flowheads[i][0], 0) for i in range(len(fheads))]
         temp_intercept_powers = [
             fpowers[i](temp_intercept_flows[i]) for i in range(len(fheads))
         ]
@@ -674,4 +916,3 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
         headmesh_for_power_contour,
         powermesh_for_power_contour,
     )
-

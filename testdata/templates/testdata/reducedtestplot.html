@@ -322,7 +322,7 @@
                         <div class="form-group">
                             <label>BEP Point Shift (Percent)</label>
                             <div class="input-group">
-                                <input class="form-control" value="5" name="bepshift">
+                                <input class="form-control" value="5" name="bepshift" id="bepshift">
                             </div>
                         </div>
                         <div class="form-group">
@@ -646,7 +646,6 @@
         $('#powercoeff').change(function (e) {
             pageUpdate();
         });
-
         $("#summarybtn").click(function (e) {
             e.preventDefault();
             $.getJSON(
@@ -678,6 +677,14 @@
                         Swal.fire('Success', lines.join('<br>'), 'success');
                     }
                 });
+        });
+        $('#marketingcurvegenbtn').click(function(e){
+            e.preventDefault();
+            console.log(fulltrim);
+            if (fulltrim == "false" | fulltrim == false){
+                $("#bepshift").val("0");
+            }
+            $("#modal1").modal('show');
         });
         $("#create-marketing-curve-form").submit(function (e) {
             e.preventDefault();

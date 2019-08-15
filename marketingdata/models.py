@@ -22,6 +22,8 @@ class MarketingCurveDetail(models.Model):
     bep_efficiency = models.FloatField(blank=True, null=True)
     peicl = models.FloatField(blank=True, null=True)
     peivl = models.FloatField(blank=True, null=True)
+    ercl = models.FloatField(blank=True, null=True)
+    ervl = models.FloatField(blank=True, null=True)
     pumptype = models.CharField(max_length=100, choices=pumptype_choices)
     imp_dia = models.FloatField(blank=True, null=True)
     fulltrim = models.BooleanField(default=False)

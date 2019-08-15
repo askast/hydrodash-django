@@ -60,11 +60,11 @@
                                                     {% if trim != 'hasalldata' and trim != 'peicl' and trim != 'peivl' %}
                                                         {% if peis == 'True' %}
                                                         <div class="text-success mb-2">
-                                                            {{ trim }}"
+                                                            {{ trim }}{% if trim != 'NPSH' %}"{% endif %}
                                                         </div>
                                                         {% else %}
                                                         <div class="text-warning mb-2">
-                                                            {{ trim }}"
+                                                            {{ trim }}{% if trim != 'NPSH' %}"{% endif %}
                                                         </div>
                                                         {% endif %} 
                                                     {% endif %}
@@ -91,12 +91,43 @@
             {% endfor %}
         </div>
     </section>
+    <div class="loading">Loading&#8230;</div>
+    <div class="modal fade" tabindex="-1" role="dialog" id="modal1" aria-modal="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Submittal Curve</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <form id="update-submittal-curve-form">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <img id="submittal-curve-img" width="100%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-whitesmoke br">
+                        <button type="submit" class="btn btn-primary">Update Curves</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     $(document).ready(function() {
+        $('.loading').hide();
         $('.btn').click(function(e) {
             e.preventDefault();
+            $('.loading').show()
             var values = $(this)
                 .attr('id')
                 .split('-');
@@ -106,13 +137,11 @@
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                data: "series=" + $("#pumpseries")
-                    .val() + "&model=" + $("#pumpmodel").val() + "&design=" + $(
-                        "#designiteration").val() + "&rpm=" + $("#rpm").val(),
+                data: "series=" + values[1] + "&model=" + values[2] + "&design=" + values[3] + "&rpm=" + values[4],
                 success: function (data) {
-                    if (data.status == 'success') {
-                        Swal.fire('Success', 'Added Data Succesfully.', 'success');
-                    }
+                    $('.loading').hide();
+                    $("#submittal-curve-img").attr("src","data:image/svg+xml;base64," + data.plot);
+                    $("#modal1").modal('show');
                 }
             });
         });
