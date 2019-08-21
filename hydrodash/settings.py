@@ -15,7 +15,7 @@ import ldap
 import logging
 from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
-logger = logging.getLogger('django_auth_ldap')
+logger = logging.getLogger("django_auth_ldap")
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 
@@ -27,75 +27,76 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '2fq09bty#s=5$s1j#ez9sng32i9)f6hq!*n5nz23*-+fu$$epo'
+SECRET_KEY = "2fq09bty#s=5$s1j#ez9sng32i9)f6hq!*n5nz23*-+fu$$epo"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['hydrodash', 'hydrodash.taco.corp', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ["hydrodash", "hydrodash.taco.corp", "127.0.0.1", "localhost"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'profiles.apps.ProfilesConfig',
-    'testdata.apps.TestdataConfig',
-    'marketingdata.apps.MarketingdataConfig',
-    'pump.apps.PumpConfig',
-    'widget_tweaks',
-    'django_tables2',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'allauth',
+    "profiles.apps.ProfilesConfig",
+    "testdata.apps.TestdataConfig",
+    "marketingdata.apps.MarketingdataConfig",
+    "pump.apps.PumpConfig",
+    "widget_tweaks",
+    "django_tables2",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "allauth",
+    "django_cleanup",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'hydrodash.urls'
+ROOT_URLCONF = "hydrodash.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'hydrodash.context_processors.context',
-            ],
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "hydrodash.context_processors.context",
+            ]
         },
-    },
+    }
 ]
 
-WSGI_APPLICATION = 'hydrodash.wsgi.application'
+WSGI_APPLICATION = "hydrodash.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'hydrodash',
-        'USER': 'tacouser',
-        'PASSWORD': 'Taco12!',
-        'HOST': 'localhost',
-        'PORT': '5432'
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "hydrodash",
+        "USER": "tacouser",
+        "PASSWORD": "Taco12!",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 
@@ -105,26 +106,20 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -136,21 +131,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 # LDAP Configuration
 # Baseline configuration.
-AUTH_LDAP_SERVER_URI = 'LDAP://TCR-AD02.taco.corp'
+AUTH_LDAP_SERVER_URI = "LDAP://TCR-AD02.taco.corp"
 
-AUTH_LDAP_BIND_DN = 'CN=Fluid Dynamics,OU=Admin Accounts,OU=TCR,OU=Taco,DC=taco,DC=corp'
-AUTH_LDAP_BIND_PASSWORD = 'ewzKAELz7h111v'
+AUTH_LDAP_BIND_DN = "CN=Fluid Dynamics,OU=Admin Accounts,OU=TCR,OU=Taco,DC=taco,DC=corp"
+AUTH_LDAP_BIND_PASSWORD = "ewzKAELz7h111v"
 # AUTH_LDAP_BIND_DN = 'CN=Atul Tambi,OU=Engineering,OU=TCR,OU=Taco,DC=taco,DC=corp'
 # AUTH_LDAP_BIND_PASSWORD = 'best fish sandwich'
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    'OU=Taco,DC=taco,DC=corp',
-    ldap.SCOPE_SUBTREE,
-    '(sAMAccountName=%(user)s)',
+    "OU=Taco,DC=taco,DC=corp", ldap.SCOPE_SUBTREE, "(sAMAccountName=%(user)s)"
 )
 # Simple group restrictions
 # AUTH_LDAP_REQUIRE_GROUP = 'cn=enabled,ou=django,ou=groups,dc=example,dc=com'
@@ -158,18 +151,18 @@ AUTH_LDAP_USER_SEARCH = LDAPSearch(
 
 # Populate the Django user from the LDAP directory.
 AUTH_LDAP_USER_ATTR_MAP = {
-    'first_name': 'givenName',
-    'last_name': 'sn',
-    'email': 'mail',
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail",
 }
 
 AUTHENTICATION_BACKENDS = (
-    'django_auth_ldap.backend.LDAPBackend',
-    'django.contrib.auth.backends.ModelBackend',
+    "django_auth_ldap.backend.LDAPBackend",
+    "django.contrib.auth.backends.ModelBackend",
 )
 
-LOGIN_URL = 'signin'
-LOGIN_REDIRECT_URL = 'profile-home'
+LOGIN_URL = "signin"
+LOGIN_REDIRECT_URL = "profile-home"
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"

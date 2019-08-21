@@ -142,6 +142,10 @@
                     $('.loading').hide();
                     $("#submittal-curve-img").attr("src","data:image/svg+xml;base64," + data.plot);
                     $("#modal1").modal('show');
+                },
+                error: function (data) {
+                    $('.loading').hide();
+                    $("#modal1").modal('show');
                 }
             });
         });

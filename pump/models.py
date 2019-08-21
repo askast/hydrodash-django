@@ -65,8 +65,8 @@ class SubmittalCurve(models.Model):
     eff_levels = ArrayField(models.FloatField())
     power_manual_location_flows = ArrayField(models.FloatField())
     power_manual_location_heads = ArrayField(models.FloatField())
-    x_axis_limits = ArrayField(models.FloatField())
-    y_axis_limits = ArrayField(models.FloatField())
+    x_axis_limit = models.FloatField()
+    y_axis_limit = models.FloatField()
     created_on = models.DateTimeField(blank=True)
     current_approved = models.BooleanField(default=False)
     curve_svg = models.FileField(upload_to="submittal_curves/", null=True, blank=True)
@@ -83,3 +83,21 @@ class SubmittalCurve(models.Model):
 
     def __str__(self):
         return f"{self.id}: {self.pump.series}{self.pump.pump_model}{self.pump.design_iteration} {self.pump.speed}RPM"
+
+
+class OldTestDetails(models.Model):
+    name = models.CharField(max_length=200, null=True, blank=True)
+    testeng = models.CharField(max_length=100, null=True, blank=True)
+    teststnd = models.CharField(max_length=100, null=True, blank=True)
+    inpipedia_in = models.FloatField(null=True, blank=True)
+    outpipedia_in = models.FloatField(null=True, blank=True)
+    description = models.CharField(max_length=1000, null=True, blank=True)
+    testconfigs_id = models.IntegerField(null=True, blank=True)
+    pump_type = models.CharField(max_length=100, null=True, blank=True)
+    created_at = models.CharField(max_length=100, null=True, blank=True)
+    updated_at = models.CharField(max_length=100, null=True, blank=True)
+    file_name = models.CharField(max_length=200, null=True, blank=True)
+    averaged = models.CharField(max_length=200, null=True, blank=True)
+
+    def __str__(self):
+        return self.name

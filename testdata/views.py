@@ -1,8 +1,14 @@
-import glob
 import os
 import fnmatch
 from dbfread import DBF
 import json
+from datetime import datetime, timedelta
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+from iapws import IAPWS95
+import re
+
 import django_tables2 as tables2
 from django_tables2 import MultiTableMixin
 from django.db.models import Q
@@ -17,13 +23,7 @@ from profiles.views import home
 from .models import RawTestsList, ReducedPumpTestDetails, ReducedPumpTestData
 from profiles.models import Profile
 from pei.utils import calculatePEI
-
-from datetime import datetime, timedelta
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
-import numpy as np
-from iapws import IAPWS95
-import re
+from pump.models import OldTestDetails
 
 
 class TestListView(TemplateView):
@@ -226,6 +226,24 @@ class TestDataReduce(View):
                 testheaders = list(testdata[0].keys())
                 testheaders = [
                     header for header in testheaders if "Sts" not in header]
+                dbf_filename = testpath.split('/')[-1]
+                if OldTestDetails.objects.filter(file_name=dbf_filename).count():
+                    oldtestdetailobj = OldTestDetails.objects.filter(file_name=dbf_filename).first()
+                    name = getattr(oldtestdetailobj, 'name')
+                    testeng = getattr(oldtestdetailobj, 'testeng')
+                    teststnd = getattr(oldtestdetailobj, 'teststnd')
+                    inpipedia_in = getattr(oldtestdetailobj, 'inpipedia_in')
+                    outpipedia_in = getattr(oldtestdetailobj, 'outpipedia_in')
+                    description = getattr(oldtestdetailobj, 'description')
+                    pump_type = getattr(oldtestdetailobj, 'pump_type')
+                else:
+                    name = ""
+                    testeng = ""
+                    teststnd = ""
+                    inpipedia_in = "" 
+                    outpipedia_in = ""
+                    description = ""
+                    pump_type = ""
 
         context = {
             "name": request.user.get_full_name(),
@@ -235,6 +253,13 @@ class TestDataReduce(View):
             "tests": zip(testids, testnames),
             "testids": testids,
             "testheaders": testheaders,
+            "oldtestname": name,
+            "testeng": testeng,
+            "teststand": teststnd,
+            "inpipe": inpipedia_in,
+            "outpipe": outpipedia_in,
+            "description": description,
+            "pumptype": pump_type
         }
         return render(request, "testdata/testdatareduce.html", context)
 

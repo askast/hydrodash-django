@@ -1,14 +1,17 @@
 import json
 import numpy as np
 from scipy.interpolate import UnivariateSpline
+import re
 
 from django.http import JsonResponse
 from django.views.generic.base import TemplateView
+from django.shortcuts import render
+from django.views import View
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.db.models import Q
 
 from .models import MarketingCurveDetail, MarketingCurveData
-from pump.models import Pump, PumpTrim
+from pump.models import Pump, PumpTrim, NPSHData
 from testdata.models import ReducedPumpTestDetails
 from pei.utils import calculatePEI
 from profiles.models import Profile
@@ -188,7 +191,11 @@ def fudgeData(request):
     eff = head * flow / (power * 367)
 
     effcoeffs = list(np.polyfit(flow / flowunitconversionfactor, eff, 6))
-    powercoeffs = list(np.polyfit(flow / flowunitconversionfactor, power/ powerunitconversionfactor, 6))
+    powercoeffs = list(
+        np.polyfit(
+            flow / flowunitconversionfactor, power / powerunitconversionfactor, 6
+        )
+    )
     power = list(power / powerunitconversionfactor)
     flow = list(flow / flowunitconversionfactor)
     head = list(head / headunitconversionfactor)
@@ -206,7 +213,6 @@ def fudgeData(request):
         "headunits": headunits,
         "powerunits": powerunits,
     }
-    # populatePumps()
 
     return JsonResponse(context)
 
@@ -220,7 +226,7 @@ def getPumpModels(request):
     series = request.GET.get("series", None)
     pumpmodels = list(
         Pump.objects.filter(series=series)
-        .order_by('pump_model')
+        .order_by("pump_model")
         .values_list("pump_model", flat=True)
         .distinct()
     )
@@ -280,7 +286,12 @@ def getTrims(request):
     designit = request.GET.get("design", None)
     rpm = request.GET.get("rpm", None)
     trims = list(
-        PumpTrim.objects.filter(pump__series=series, pump__pump_model=pumpmodel, pump__design_iteration=designit, pump__speed=rpm)
+        PumpTrim.objects.filter(
+            pump__series=series,
+            pump__pump_model=pumpmodel,
+            pump__design_iteration=designit,
+            pump__speed=rpm,
+        )
         .values_list("trim", flat=True)
         .distinct()
     )
@@ -304,7 +315,9 @@ def addMarketingData(request):
     curvedata = json.loads(request.POST.get("curvedata", None))
     curveheadcoefficients = json.loads(request.POST.get("curveheadcoefficients", None))
     curveeffcoefficients = json.loads(request.POST.get("curveeffcoefficients", None))
-    curvepowercoefficients = json.loads(request.POST.get("curvepowercoefficients", None))
+    curvepowercoefficients = json.loads(
+        request.POST.get("curvepowercoefficients", None)
+    )
     fulltrim = request.POST.get("fulltrim", None)
     flowunits = request.POST.get("flowunits", None)
     headunits = request.POST.get("headunits", None)
@@ -404,7 +417,7 @@ def addMarketingData(request):
         data_source=testdataObj,
         headcoeffs=curveheadcoefficients,
         effcoeffs=curveeffcoefficients,
-        powercoeffs=curvepowercoefficients
+        powercoeffs=curvepowercoefficients,
     )
     curveDetailObj.save()
 
@@ -413,7 +426,9 @@ def addMarketingData(request):
             pump__series=series,
             pump__pump_model=pumpmodel,
             pump__design_iteration=designit,
-            pump__speed=rpm, trim=trim)
+            pump__speed=rpm,
+            trim=trim,
+        )
         pumptrim.update(engineering_data=testdataObj, marketing_data=curveDetailObj)
 
     for flowpoint, headpoint, powerpoint, effpoint in zip(
@@ -443,6 +458,8 @@ class MarketingCurveListView(TemplateView):
         :param **kwargs: 
 
         """
+
+        # populatePumps()
         context = {
             "name": self.request.user.get_full_name(),
             "title1": "Hydro Dash",
@@ -656,168 +673,317 @@ def marketingCurvePlotData(request):
     return JsonResponse(context)
 
 
+class NPSHDataInput(View):
+    template_name = "marketingdata/marketingnpshdatainput.html"
+
+    def get(self, request, *args, **kwargs):
+        pumps = list(
+            Pump.objects.order_by("series", "pump_model", "design_iteration", "-speed")
+            .distinct("series", "pump_model", "design_iteration")
+            .values_list("series", "pump_model", "design_iteration", "speed", "id")
+        )
+        pumpdata = [
+            (pump_id, f"{series}{pumpmodel}{design} {speed}RPM")
+            for (series, pumpmodel, design, speed, pump_id) in pumps
+        ]
+
+        context = {
+            "name": self.request.user.get_full_name(),
+            "title1": "Hydro Dash",
+            "activedropdown": "",
+            "activename": "NPSH Data",
+            "pumps": pumpdata,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        pumpid = request.POST.get("pump", None)
+        npshText = request.POST.get("npshdata", None)
+        # add NPSH data to all pumps
+        pump = Pump.objects.get(id=pumpid)
+        ref_speed = getattr(pump, "speed")
+        ref_series = getattr(pump, "series")
+        ref_model = getattr(pump, "pump_model")
+        ref_design = getattr(pump, "design_iteration")
+        pumpqs = Pump.objects.filter(
+            series=ref_series, pump_model=ref_model, design_iteration=ref_design
+        )
+
+        values = []
+        for line in npshText.split('\n'):
+            print(f'line: {line}')
+            if not re.search("[a-zA-Z]", line):
+                if(line.strip()):
+                    if "," in line:
+                        values.append(
+                            (float(line.split(",")[0]), float(line.split(",")[1]))
+                        )
+                    elif "\t" in line:
+                        values.append(
+                            (float(line.split("\t")[0]), float(line.split("\t")[1]))
+                        )
+                    else:
+                        values.append(
+                            (float(line.split(" ")[0]), float(line.split()[1]))
+                        )
+
+        for pumpobj in pumpqs:
+            NPSHData.objects.filter(pump=pumpobj).delete()
+            for flow, npsh in values:
+                npshobj = NPSHData(
+                    pump=pumpobj,
+                    flow=flow / 4.402862 * pumpobj.speed / ref_speed,
+                    npsh=npsh / 3.28084 * pow(pumpobj.speed / ref_speed, 2),
+                )
+                npshobj.save()
+
+        context = {"status": "success"}
+        return JsonResponse(context)
+
+
 def populatePumps():
-    pumpstring = """
-    KV	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    KV	2006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    KV	3006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    KV	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    KV	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    KV	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    KV	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    KV	6007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    KV	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    KV	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    KV	4009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    KV	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    KV	2011	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    KV	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KV	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KV	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KV	8011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KV	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KV	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KV	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KV	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KS	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    KS	2006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    KS	3006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    KS	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    KS	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    KS	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    KS	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    KS	6007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    KS	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    KS	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    KS	4009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    KS	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    KS	2011	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    KS	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KS	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KS	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KS	8011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    KS	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KS	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KS	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    KS	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    FI	1206	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    FI	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    FI	2506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    FI	1207	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    FI	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    FI	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    FI	2507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    FI	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    FI	4007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    FI	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    FI	1209	D	1160, 1450, 1760, 2900, 3500	9.5, 8.8, 8.1, 7.4, 6.7
-    FI	1509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    FI	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    FI	2509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    FI	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    FI	4009	D	1160, 1450, 1760	9.5, 9.0, 8.25, 7.5, 6.75
-    FI	5009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    FI	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 8.0, 7.0
-    FI	1511	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    FI	2511	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    FI	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    FI	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    FI	5011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    FI	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    FI	2013	D	1160, 1450, 1760	13.5, 12.63, 11.75, 10.88, 10.0
-    FI	2513	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    FI	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    FI	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    FI	5013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    FI	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    FI	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    CI	1206	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    CI	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    CI	2506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    CI	1207	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    CI	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    CI	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    CI	2507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    CI	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    CI	4007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    CI	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    CI	1209	D	1160, 1450, 1760, 2900, 3500	9.5, 8.8, 8.1, 7.4, 6.7
-    CI	1509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    CI	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    CI	2509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    CI	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    CI	4009	D	1160, 1450, 1760	9.5, 9.0, 8.25, 7.5, 6.75
-    CI	5009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    CI	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 8.0, 7.0
-    CI	1511	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    CI	2511	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    CI	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    CI	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    CI	5011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    CI	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    CI	2013	D	1160, 1450, 1760	13.5, 12.63, 11.75, 10.88, 10.0
-    CI	2513	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    CI	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    CI	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    CI	5013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    CI	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    CI	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5"""
-    Pump.objects.all().delete()
-    PumpTrim.objects.all().delete()
-    for line in pumpstring.strip().split("\n"):
-        series, pumpmodel, design, speeds, trims = line.split("\t")
-        for speed in speeds.split(", "):
-            pumpObj = Pump(
-                series=series.strip(),
-                pump_model=pumpmodel,
-                design_iteration=design,
-                speed=speed,
-            )
-            pumpObj.save()
-            for trim in trims.split(", "):
-                trimObj = PumpTrim(pump=pumpObj, trim=trim)
-                trimObj.save()
+    # pumpstring = """
+    # KV	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # KV	2006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # KV	3006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # KV	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # KV	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # KV	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
+    # KV	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # KV	6007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
+    # KV	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # KV	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # KV	4009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # KV	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
+    # KV	2011	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
+    # KV	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KV	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KV	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KV	8011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KV	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KV	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KV	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KV	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KS	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # KS	2006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # KS	3006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # KS	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # KS	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # KS	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
+    # KS	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # KS	6007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
+    # KS	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # KS	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # KS	4009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # KS	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
+    # KS	2011	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
+    # KS	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KS	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KS	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KS	8011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # KS	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KS	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KS	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # KS	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # FI	1206	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # FI	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # FI	2506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # FI	1207	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # FI	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # FI	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # FI	2507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
+    # FI	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # FI	4007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # FI	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
+    # FI	1209	D	1160, 1450, 1760, 2900, 3500	9.5, 8.8, 8.1, 7.4, 6.7
+    # FI	1509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # FI	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # FI	2509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # FI	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # FI	4009	D	1160, 1450, 1760	9.5, 9.0, 8.25, 7.5, 6.75
+    # FI	5009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
+    # FI	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 8.0, 7.0
+    # FI	1511	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
+    # FI	2511	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # FI	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # FI	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # FI	5011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # FI	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # FI	2013	D	1160, 1450, 1760	13.5, 12.63, 11.75, 10.88, 10.0
+    # FI	2513	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # FI	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # FI	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # FI	5013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # FI	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # FI	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # CI	1206	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # CI	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # CI	2506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
+    # CI	1207	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # CI	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # CI	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # CI	2507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
+    # CI	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # CI	4007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
+    # CI	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
+    # CI	1209	D	1160, 1450, 1760, 2900, 3500	9.5, 8.8, 8.1, 7.4, 6.7
+    # CI	1509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # CI	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # CI	2509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # CI	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
+    # CI	4009	D	1160, 1450, 1760	9.5, 9.0, 8.25, 7.5, 6.75
+    # CI	5009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
+    # CI	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 8.0, 7.0
+    # CI	1511	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
+    # CI	2511	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # CI	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # CI	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # CI	5011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # CI	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
+    # CI	2013	D	1160, 1450, 1760	13.5, 12.63, 11.75, 10.88, 10.0
+    # CI	2513	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # CI	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # CI	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # CI	5013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # CI	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
+    # CI	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5"""
+    # Pump.objects.all().delete()
+    # PumpTrim.objects.all().delete()
+    # for line in pumpstring.strip().split("\n"):
+    #     series, pumpmodel, design, speeds, trims = line.split("\t")
+    #     for speed in speeds.split(", "):
+    #         pumpObj = Pump(
+    #             series=series.strip(),
+    #             pump_model=pumpmodel,
+    #             design_iteration=design,
+    #             speed=speed,
+    #         )
+    #         pumpObj.save()
+    #         for trim in trims.split(", "):
+    #             trimObj = PumpTrim(pump=pumpObj, trim=trim)
+    #             trimObj.save()
     curvenumbers_string = """
-    KV-2006D	3500	PC-4141
-KV-2006D	1760	PC-4143
-KV-2006D	2900	PC-4142
-KV-2006D	1450	PC-4144
-KV-3006D	3500	PC-4140
-KV-3006D	1760	PC-4138
-KV-3006D	2900	PC-4139
-KV-3006D	1450	PC-4137
-KV-1507D	3500	PC-4153
-KV-1507D	1760	PC-4151
-KV-1507D	2900	PC-4152
-KV-1507D	1450	PC-4150
-KV-1507D	1160	PC-4149
-KV-2007D	3500	PC-4158
-KV-2007D	1760	PC-4156
-KV-2007D	2900	PC-4157
-KV-2007D	1450	PC-4155
-KV-2007D	1160	PC-4154
-KV-3007D	3500	PC-4163
-KV-3007D	1760	PC-4161
-KV-3007D	2900	PC-4162
-KV-3007D	1450	PC-4160
-KV-3007D	1160	PC-4159
-KV-2009D	3500	PC-4173
-KV-2009D	1760	PC-4171
-KV-2009D	2900	PC-4172
-KV-2009D	1450	PC-4170
-KV-2009D	1160	PC-4169
-KV-5007D	3500	PC-4168
-KV-5007D	1760	PC-4166
-KV-5007D	2900	PC-4167
-KV-5007D	1450	PC-4165
-KV-5007D	1160	PC-4164
-KV-1506D	3500	PC-4148
-KV-1506D	1760	PC-4146
-KV-1506D	2900	PC-4147
-KV-1506D	1450	PC-4145
-KV-6009D	3500	PC-4178
-KV-6009D	1760	PC-4176
-KV-6009D	2900	PC-4177
-KV-6009D	1450	PC-4175
-KV-6009D	1160	PC-4174
+FI	1206	D	1760	PC	4005
+FI	1206	D	3500	PC	4006
+FI	1206	D	1450	PC	4007
+FI	1206	D	2900	PC	4008
+FI	1506	D	1760	PC	4001
+FI	1506	D	3500	PC	4002
+FI	1506	D	1450	PC	4004
+FI	1506	D	2900	PC	4003
+FI	2506	D	1760	PC	4013
+FI	2506	D	3500	PC	4012
+FI	2506	D	1450	PC	4015
+FI	2506	D	2900	PC	4014
+FI	1207	D	3500	PC	4046
+FI	1207	D	1760	PC	4047
+FI	1207	D	1160	PC	4048
+FI	1207	D	2900	PC	4049
+FI	1207	D	1450	PC	4050
+FI	1507	D	3500	PC	4016
+FI	1507	D	1760	PC	4017
+FI	1507	D	1160	PC	4018
+FI	1507	D	2900	PC	4019
+FI	1507	D	1450	PC	4020
+FI	2007	D	3500	PC	4105
+FI	2007	D	1760	PC	4106
+FI	2007	D	1160	PC	4107
+FI	2007	D	2900	PC	4108
+FI	2007	D	1450	PC	4109
+FI	2507	D	3500	PC	3038
+FI	2507	D	1760	PC	3039
+FI	2507	D	1160	PC	3040
+FI	2507	D	2900	PC	3041
+FI	2507	D	1450	PC	3042
+FI	3007	D	3500	PC	4124
+FI	3007	D	1760	PC	4125
+FI	3007	D	1160	PC	4126
+FI	3007	D	2900	PC	4127
+FI	3007	D	1450	PC	4128
+FI	4007	D	3500	PC	4078
+FI	4007	D	1760	PC	4079
+FI	4007	D	1160	PC	4080
+FI	4007	D	2900	PC	4081
+FI	4007	D	1450	PC	4082
+FI	5007	D	3500	PC	4073
+FI	5007	D	1760	PC	4074
+FI	5007	D	1160	PC	4075
+FI	5007	D	2900	PC	4076
+FI	5007	D	1450	PC	4077
+FI	1509	D	3500	PC	4021
+FI	1509	D	1760	PC	4022
+FI	1509	D	1160	PC	4023
+FI	1509	D	2900	PC	4024
+FI	1509	D	1450	PC	4025
+FI	2009	D	3500	PC	4035
+FI	2009	D	1760	PC	4036
+FI	2009	D	1160	PC	4037
+FI	2009	D	2900	PC	4038
+FI	2009	D	1450	PC	4039
+FI	2509	D	3500	PC	4091
+FI	2509	D	1760	PC	4092
+FI	2509	D	1160	PC	4093
+FI	2509	D	2900	PC	4094
+FI	2509	D	1450	PC	4095
+FI	3009	D	3500	PC	4083
+FI	3009	D	1760	PC	4084
+FI	3009	D	1160	PC	4085
+FI	3009	D	2900	PC	4086
+FI	3009	D	1450	PC	4087
+FI	4009	D	1760	PC	4026
+FI	4009	D	1160	PC	4027
+FI	4009	D	1450	PC	4028
+FI	5009	D	1760	PC	4040
+FI	5009	D	1160	PC	4041
+FI	5009	D	1450	PC	4042
+FI	6009	D	1760	PC	4009
+FI	6009	D	1160	PC	4010
+FI	6009	D	1450	PC	4011
+FI	2511	D	1760	PC	4029
+FI	2511	D	1160	PC	4030
+FI	2511	D	1450	PC	4031
+FI	3011	D	1760	PC	4032
+FI	3011	D	1160	PC	4033
+FI	3011	D	1450	PC	4034
+FI	5011	D	1760	PC	4099
+FI	5011	D	1160	PC	4100
+FI	5011	D	1450	PC	4101
+FI	6011	D	1760	PC	4043
+FI	6011	D	1160	PC	4044
+FI	6011	D	1450	PC	4045
+FI	2513	D	1760	PC	4129
+FI	2513	D	1160	PC	4130
+FI	2513	D	1450	PC	4131
+FI	3013	D	1760	PC	4118
+FI	3013	D	1160	PC	4119
+FI	3013	D	1450	PC	4120
+FI	4013	D	1760	PC	4070
+FI	4013	D	1160	PC	4071
+FI	4013	D	1450	PC	4072
+FI	5013	D	1760	PC	4096
+FI	5013	D	1160	PC	4097
+FI	5013	D	1450	PC	4098
+FI	6013	D	1760	PC	4022
+FI	6013	D	1160	PC	4121
+FI	6013	D	1450	PC	4123
+FI	8013	D	1760	PC	4088
+FI	8013	D	1160	PC	4089
+FI	8013	D	1450	PC	4090
 """
+    for line in curvenumbers_string.strip().split("\n"):
+        series, pumpmodel, design, speed, pc, curve_number = line.split("\t")
+        print(
+            f"series:{series}; pumpmodel:{pumpmodel}; design:{design}; speed:{speed}; curvenumber:{curve_number}"
+        )
+        pumpObj = Pump.objects.filter(
+            series=series.strip(),
+            pump_model=pumpmodel.strip(),
+            design_iteration=design.strip(),
+            speed=speed.strip(),
+        )
+        print(pumpObj)
+        pumpObj.update(
+            curve_number=curve_number.strip(),
+            curve_rev=f"{pc.strip()}-{curve_number.strip()}-A",
+        )
+

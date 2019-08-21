@@ -229,78 +229,78 @@
                                                         <div class="row">
                                                             <div class="col-12 col-md-6 form-group">
                                                                 <label>Test Name</label>
-                                                                <input type="text" id="testname" class="form-control"
+                                                                <input type="text" id="testname" value="{{ oldtestname }}" class="form-control"
                                                                     name="testname">
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
                                                                 <label>Test Conducted By</label>
-                                                                <input type="text" id="testeng" class="form-control"
+                                                                <input type="text" id="testeng" value="{{ testeng }}" class="form-control"
                                                                     name="testeng">
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
                                                                 <label>Test Loop</label>
                                                                 <select class="form-control" name="testloop">
-                                                                    <option disabled="" selected="" value=""> -- Select
+                                                                    <option disabled="" value=""> -- Select
                                                                         an option -- </option>
-                                                                    <option>Commercial Front Loop</option>
-                                                                    <option>Commercial Back Loop</option>
-                                                                    <option>Residential Loop 1</option>
-                                                                    <option>Residential Loop 2</option>
+                                                                    <option {% if testloop == "Commercial Front Loop" %}selected{% endif %}>Commercial Front Loop</option>
+                                                                    <option {% if testloop == "Commercial Back Loop" %}selected{% endif %}>Commercial Back Loop</option>
+                                                                    <option {% if testloop == "Residential Loop 1" %}selected{% endif %}>Residential Loop 1</option>
+                                                                    <option {% if testloop == "Residential Loop 2" %}selected{% endif %}>Residential Loop 2</option>
                                                                     <option>Outside Loop</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
                                                                 <label>Discharge Pipe Diameter</label>
                                                                 <select class="form-control" name="dispipedia">
-                                                                    <option disabled="" selected="" value="" required>--
+                                                                    <option disabled="" value="" required>--
                                                                         Select an option -- </option>
-                                                                    <option value=0.62>0.5</option>
-                                                                    <option value=0.82>0.75</option>
-                                                                    <option value=1.05>1.0</option>
-                                                                    <option value=1.38>1.25</option>
-                                                                    <option value=1.61>1.5</option>
-                                                                    <option value=2.07>2.0</option>
-                                                                    <option value=2.47>2.5</option>
-                                                                    <option value=3.07>3.0</option>
-                                                                    <option value=3.55>3.5</option>
-                                                                    <option value=4.03>4.0</option>
-                                                                    <option value=5.05>5.0</option>
-                                                                    <option value=6.07>6.0</option>
-                                                                    <option value=7.98>8.0</option>
-                                                                    <option value=10.02>10.0</option>
-                                                                    <option value=11.94>12.0</option>
-                                                                    <option value=13.13>14.0</option>
-                                                                    <option value=15>16.0</option>
-                                                                    <option value=16.66>18.0</option>
-                                                                    <option value=18.81>20.0</option>
-                                                                    <option value=22.63>24.0</option>
+                                                                    <option value=0.62 {% if outpipe == 0.5 %}selected{% endif %}>0.5</option>
+                                                                    <option value=0.82 {% if outpipe == 0.75 %}selected{% endif %}>0.75</option>
+                                                                    <option value=1.05 {% if outpipe == 1.0 %}selected{% endif %}>1.0</option>
+                                                                    <option value=1.38 {% if outpipe == 1.25 %}selected{% endif %}>1.25</option>
+                                                                    <option value=1.61 {% if outpipe == 1.5 %}selected{% endif %}>1.5</option>
+                                                                    <option value=2.07 {% if outpipe == 2.0 %}selected{% endif %}>2.0</option>
+                                                                    <option value=2.47 {% if outpipe == 2.5 %}selected{% endif %}>2.5</option>
+                                                                    <option value=3.07 {% if outpipe == 3.0 %}selected{% endif %}>3.0</option>
+                                                                    <option value=3.55 {% if outpipe == 3.5 %}selected{% endif %}>3.5</option>
+                                                                    <option value=4.03 {% if outpipe == 4.0 %}selected{% endif %}>4.0</option>
+                                                                    <option value=5.05 {% if outpipe == 5.0 %}selected{% endif %}>5.0</option>
+                                                                    <option value=6.07 {% if outpipe == 6.0 %}selected{% endif %}>6.0</option>
+                                                                    <option value=7.98 {% if outpipe == 8.0 %}selected{% endif %}>8.0</option>
+                                                                    <option value=10.02 {% if outpipe == 10.0 %}selected{% endif %}>10.0</option>
+                                                                    <option value=11.94 {% if outpipe == 12.0 %}selected{% endif %}>12.0</option>
+                                                                    <option value=13.13 {% if outpipe == 14.0 %}selected{% endif %}>14.0</option>
+                                                                    <option value=15 {% if outpipe == 16 %}selected{% endif %}>16.0</option>
+                                                                    <option value=16.66 {% if outpipe == 18.0 %}selected{% endif %}>18.0</option>
+                                                                    <option value=18.81 {% if outpipe == 20.0 %}selected{% endif %}>20.0</option>
+                                                                    <option value=22.63 {% if outpipe == 24.0 %}selected{% endif %}>24.0</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
                                                                 <label>Inlet Pipe Diameter</label>
                                                                 <select class="form-control" name="inpipedia">
-                                                                    <option disabled="" selected="" value="" required>
+                                                                    <option disabled="" value="" required>
                                                                         -- Select an option -- </option>
-                                                                    <option value=0.62>0.5</option>
-                                                                    <option value=0.82>0.75</option>
-                                                                    <option value=1.05>1.0</option>
-                                                                    <option value=1.38>1.25</option>
-                                                                    <option value=1.61>1.5</option>
-                                                                    <option value=2.07>2.0</option>
-                                                                    <option value=2.47>2.5</option>
-                                                                    <option value=3.07>3.0</option>
-                                                                    <option value=3.55>3.5</option>
-                                                                    <option value=4.03>4.0</option>
-                                                                    <option value=5.05>5.0</option>
-                                                                    <option value=6.07>6.0</option>
-                                                                    <option value=7.98>8.0</option>
-                                                                    <option value=10.02>10.0</option>
-                                                                    <option value=11.94>12.0</option>
-                                                                    <option value=13.13>14.0</option>
-                                                                    <option value=15>16.0</option>
-                                                                    <option value=16.66>18.0</option>
-                                                                    <option value=18.81>20.0</option>
-                                                                    <option value=22.63>24.0</option>
+                                                                    <option value=0.62 {% if outpipe == 0.5 %}selected{% endif %}>0.5</option>
+                                                                    <option value=0.82 {% if outpipe == 0.75 %}selected{% endif %}>0.75</option>
+                                                                    <option value=1.05 {% if outpipe == 1.0 %}selected{% endif %}>1.0</option>
+                                                                    <option value=1.38 {% if outpipe == 1.25 %}selected{% endif %}>1.25</option>
+                                                                    <option value=1.61 {% if outpipe == 1.5 %}selected{% endif %}>1.5</option>
+                                                                    <option value=2.07 {% if outpipe == 2.0 %}selected{% endif %}>2.0</option>
+                                                                    <option value=2.47 {% if outpipe == 2.5 %}selected{% endif %}>2.5</option>
+                                                                    <option value=3.07 {% if outpipe == 3.0 %}selected{% endif %}>3.0</option>
+                                                                    <option value=3.55 {% if outpipe == 3.5 %}selected{% endif %}>3.5</option>
+                                                                    <option value=4.03 {% if outpipe == 4.0 %}selected{% endif %}>4.0</option>
+                                                                    <option value=5.05 {% if outpipe == 5.0 %}selected{% endif %}>5.0</option>
+                                                                    <option value=6.07 {% if outpipe == 6.0 %}selected{% endif %}>6.0</option>
+                                                                    <option value=7.98 {% if outpipe == 8.0 %}selected{% endif %}>8.0</option>
+                                                                    <option value=10.02 {% if outpipe == 10.0 %}selected{% endif %}>10.0</option>
+                                                                    <option value=11.94 {% if outpipe == 12.0 %}selected{% endif %}>12.0</option>
+                                                                    <option value=13.13 {% if outpipe == 14.0 %}selected{% endif %}>14.0</option>
+                                                                    <option value=15 {% if outpipe == 16 %}selected{% endif %}>16.0</option>
+                                                                    <option value=16.66 {% if outpipe == 18.0 %}selected{% endif %}>18.0</option>
+                                                                    <option value=18.81 {% if outpipe == 20.0 %}selected{% endif %}>20.0</option>
+                                                                    <option value=22.63 {% if outpipe == 24.0 %}selected{% endif %}>24.0</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
@@ -308,15 +308,15 @@
                                                                 <select class="form-control" name="pumptype" required>
                                                                     <option disabled="" selected="" value=""> -- Select
                                                                         an option -- </option>
-                                                                    <option value="FI">FI</option>
-                                                                    <option value="CI">CI</option>
-                                                                    <option value="KV">KV</option>
-                                                                    <option value="KS">KS</option>
-                                                                    <option value="TA">TA</option>
-                                                                    <option value="SKV">SKV</option>
-                                                                    <option value="SKS">SKS</option>
-                                                                    <option value="SFI">SFI</option>
-                                                                    <option value="SCI">SCI</option>
+                                                                    <option value="FI" {% if pumptype == "FI" %}selected{% endif %}>FI</option>
+                                                                    <option value="CI" {% if pumptype == "CI" %}selected{% endif %}>CI</option>
+                                                                    <option value="KV" {% if pumptype == "KV" %}selected{% endif %}>KV</option>
+                                                                    <option value="KS" {% if pumptype == "KS" %}selected{% endif %}>KS</option>
+                                                                    <option value="TA" {% if pumptype == "TA" %}selected{% endif %}>TA</option>
+                                                                    <option value="SKV" {% if pumptype == "SKV" %}selected{% endif %}>SKV</option>
+                                                                    <option value="SKS" {% if pumptype == "SKS" %}selected{% endif %}>SKS</option>
+                                                                    <option value="SFI" {% if pumptype == "SFI" %}selected{% endif %}>SFI</option>
+                                                                    <option value="SCI" {% if pumptype == "SCI" %}selected{% endif %}>SCI</option>
                                                                     <option value="ESCC">End suction close-coupled
                                                                     </option>
                                                                     <option value="ESFM">End suction frame mounted/own
@@ -366,7 +366,7 @@
                                                             <div class="col-12 col-md-6 form-group">
                                                                 <label>Description</label>
                                                                 <textarea class="form-control" rows=4 name="description"
-                                                                    style="height:80%;"></textarea>
+                                                                    style="height:80%;">{{ description }}</textarea>
                                                             </div>
                                                         </div>
                                                         <a href="#" class="btn btn-primary" id="loaddatabtn">Load
@@ -474,8 +474,7 @@
 
 <script>
     $(document).ready(function () {
-        var removefl = "{{removefl}}";
-        console.log(removefl);
+        var deletedpoints = []
 
         function arrayRemove(arr, value) {
             return arr.filter(function (ele) {
@@ -684,12 +683,9 @@
         });
         $("#delbtn").click(function (e) {
             e.preventDefault();
-            selectedPoints.sort();
-            selectedPoints.reverse();
             $.each(selectedPoints, function (i, index) {
                 chart1data[index] = null;
-                console.log("Deleting: " + JSON.stringify(testdata[index]));
-                testdata.splice(index, 1);
+                deletedpoints.push(index);
             });
             chart1.series[0].update({
                 data: chart1data
@@ -721,6 +717,17 @@
             e.preventDefault;
             var isValid = form1.valid();
             if (isValid) {
+                deletedpoints.sort(sortNumber);
+                console.log("deletedpoints:");
+                console.log(deletedpoints);
+                console.log("Before: ");
+                console.log(testdata);
+                $.each(deletedpoints, function (i, index) {
+                    console.log(index + " Deleting: " + JSON.stringify(testdata[index]));
+                    testdata.splice(index, 1);
+                });
+                console.log("Before: ");
+                console.log(testdata);
                 $.ajax({
                     type: 'POST',
                     url: "{% url 'addtoreduceddatabase' %}",
@@ -738,7 +745,6 @@
                             });
                         }
                     }
-
                 });
             } else {
                 Swal.fire({
@@ -748,7 +754,9 @@
                 });
             }
         });
-
+        function sortNumber(a, b) {
+            return b - a;
+        }
 
     });
 </script>
