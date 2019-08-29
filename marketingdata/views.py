@@ -636,7 +636,7 @@ def marketingCurvePlotData(request):
     curvedata = list(
         MarketingCurveData.objects.filter(curveid=curvedetail[0]).values(
             "flow", "head", "power", "efficiency"
-        )
+        ).order_by("flow")
     )
 
     flow = []
@@ -742,248 +742,133 @@ class NPSHDataInput(View):
 
 
 def populatePumps():
-    # pumpstring = """
-    # KV	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # KV	2006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # KV	3006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # KV	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # KV	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # KV	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    # KV	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # KV	6007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    # KV	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # KV	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # KV	4009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # KV	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    # KV	2011	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    # KV	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KV	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KV	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KV	8011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KV	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KV	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KV	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KV	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KS	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # KS	2006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # KS	3006	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # KS	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # KS	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # KS	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    # KS	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # KS	6007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    # KS	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # KS	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # KS	4009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # KS	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    # KS	2011	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    # KS	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KS	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KS	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KS	8011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # KS	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KS	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KS	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # KS	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # FI	1206	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # FI	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # FI	2506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # FI	1207	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # FI	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # FI	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # FI	2507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    # FI	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # FI	4007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # FI	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    # FI	1209	D	1160, 1450, 1760, 2900, 3500	9.5, 8.8, 8.1, 7.4, 6.7
-    # FI	1509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # FI	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # FI	2509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # FI	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # FI	4009	D	1160, 1450, 1760	9.5, 9.0, 8.25, 7.5, 6.75
-    # FI	5009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    # FI	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 8.0, 7.0
-    # FI	1511	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    # FI	2511	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # FI	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # FI	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # FI	5011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # FI	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # FI	2013	D	1160, 1450, 1760	13.5, 12.63, 11.75, 10.88, 10.0
-    # FI	2513	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # FI	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # FI	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # FI	5013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # FI	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # FI	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # CI	1206	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # CI	1506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # CI	2506	D	1450, 1760, 2900, 3500	6.25, 5.75, 5.25, 4.75, 4.25
-    # CI	1207	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # CI	1507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # CI	2007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # CI	2507	D	1160, 1450, 1760, 2900, 3500	7.25, 6.875, 6.5, 6.0, 5.5
-    # CI	3007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # CI	4007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75, 5.25
-    # CI	5007	D	1160, 1450, 1760, 2900, 3500	7.25, 6.75, 6.25, 5.75
-    # CI	1209	D	1160, 1450, 1760, 2900, 3500	9.5, 8.8, 8.1, 7.4, 6.7
-    # CI	1509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # CI	2009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # CI	2509	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # CI	3009	D	1160, 1450, 1760, 2900, 3500	9.5, 9.0, 8.25, 7.5, 6.75
-    # CI	4009	D	1160, 1450, 1760	9.5, 9.0, 8.25, 7.5, 6.75
-    # CI	5009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 7.75, 7.00
-    # CI	6009	D	1160, 1450, 1760	9.5, 9.0, 8.5, 8.0, 7.0
-    # CI	1511	D	1160, 1450, 1760	11.25, 10.5, 9.75, 9.0, 8.25
-    # CI	2511	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # CI	3011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # CI	4011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # CI	5011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # CI	6011	D	1160, 1450, 1760	11.00, 10.25, 9.5, 8.75, 8.0
-    # CI	2013	D	1160, 1450, 1760	13.5, 12.63, 11.75, 10.88, 10.0
-    # CI	2513	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # CI	3013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # CI	4013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # CI	5013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # CI	6013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5
-    # CI	8013	D	1160, 1450, 1760	13.5, 12.5, 11.5, 10.5, 9.5"""
-    # Pump.objects.all().delete()
-    # PumpTrim.objects.all().delete()
-    # for line in pumpstring.strip().split("\n"):
-    #     series, pumpmodel, design, speeds, trims = line.split("\t")
-    #     for speed in speeds.split(", "):
-    #         pumpObj = Pump(
-    #             series=series.strip(),
-    #             pump_model=pumpmodel,
-    #             design_iteration=design,
-    #             speed=speed,
-    #         )
-    #         pumpObj.save()
-    #         for trim in trims.split(", "):
-    #             trimObj = PumpTrim(pump=pumpObj, trim=trim)
-    #             trimObj.save()
-    curvenumbers_string = """
-FI	1206	D	1760	PC	4005
-FI	1206	D	3500	PC	4006
-FI	1206	D	1450	PC	4007
-FI	1206	D	2900	PC	4008
-FI	1506	D	1760	PC	4001
-FI	1506	D	3500	PC	4002
-FI	1506	D	1450	PC	4004
-FI	1506	D	2900	PC	4003
-FI	2506	D	1760	PC	4013
-FI	2506	D	3500	PC	4012
-FI	2506	D	1450	PC	4015
-FI	2506	D	2900	PC	4014
-FI	1207	D	3500	PC	4046
-FI	1207	D	1760	PC	4047
-FI	1207	D	1160	PC	4048
-FI	1207	D	2900	PC	4049
-FI	1207	D	1450	PC	4050
-FI	1507	D	3500	PC	4016
-FI	1507	D	1760	PC	4017
-FI	1507	D	1160	PC	4018
-FI	1507	D	2900	PC	4019
-FI	1507	D	1450	PC	4020
-FI	2007	D	3500	PC	4105
-FI	2007	D	1760	PC	4106
-FI	2007	D	1160	PC	4107
-FI	2007	D	2900	PC	4108
-FI	2007	D	1450	PC	4109
-FI	2507	D	3500	PC	3038
-FI	2507	D	1760	PC	3039
-FI	2507	D	1160	PC	3040
-FI	2507	D	2900	PC	3041
-FI	2507	D	1450	PC	3042
-FI	3007	D	3500	PC	4124
-FI	3007	D	1760	PC	4125
-FI	3007	D	1160	PC	4126
-FI	3007	D	2900	PC	4127
-FI	3007	D	1450	PC	4128
-FI	4007	D	3500	PC	4078
-FI	4007	D	1760	PC	4079
-FI	4007	D	1160	PC	4080
-FI	4007	D	2900	PC	4081
-FI	4007	D	1450	PC	4082
-FI	5007	D	3500	PC	4073
-FI	5007	D	1760	PC	4074
-FI	5007	D	1160	PC	4075
-FI	5007	D	2900	PC	4076
-FI	5007	D	1450	PC	4077
-FI	1509	D	3500	PC	4021
-FI	1509	D	1760	PC	4022
-FI	1509	D	1160	PC	4023
-FI	1509	D	2900	PC	4024
-FI	1509	D	1450	PC	4025
-FI	2009	D	3500	PC	4035
-FI	2009	D	1760	PC	4036
-FI	2009	D	1160	PC	4037
-FI	2009	D	2900	PC	4038
-FI	2009	D	1450	PC	4039
-FI	2509	D	3500	PC	4091
-FI	2509	D	1760	PC	4092
-FI	2509	D	1160	PC	4093
-FI	2509	D	2900	PC	4094
-FI	2509	D	1450	PC	4095
-FI	3009	D	3500	PC	4083
-FI	3009	D	1760	PC	4084
-FI	3009	D	1160	PC	4085
-FI	3009	D	2900	PC	4086
-FI	3009	D	1450	PC	4087
-FI	4009	D	1760	PC	4026
-FI	4009	D	1160	PC	4027
-FI	4009	D	1450	PC	4028
-FI	5009	D	1760	PC	4040
-FI	5009	D	1160	PC	4041
-FI	5009	D	1450	PC	4042
-FI	6009	D	1760	PC	4009
-FI	6009	D	1160	PC	4010
-FI	6009	D	1450	PC	4011
-FI	2511	D	1760	PC	4029
-FI	2511	D	1160	PC	4030
-FI	2511	D	1450	PC	4031
-FI	3011	D	1760	PC	4032
-FI	3011	D	1160	PC	4033
-FI	3011	D	1450	PC	4034
-FI	5011	D	1760	PC	4099
-FI	5011	D	1160	PC	4100
-FI	5011	D	1450	PC	4101
-FI	6011	D	1760	PC	4043
-FI	6011	D	1160	PC	4044
-FI	6011	D	1450	PC	4045
-FI	2513	D	1760	PC	4129
-FI	2513	D	1160	PC	4130
-FI	2513	D	1450	PC	4131
-FI	3013	D	1760	PC	4118
-FI	3013	D	1160	PC	4119
-FI	3013	D	1450	PC	4120
-FI	4013	D	1760	PC	4070
-FI	4013	D	1160	PC	4071
-FI	4013	D	1450	PC	4072
-FI	5013	D	1760	PC	4096
-FI	5013	D	1160	PC	4097
-FI	5013	D	1450	PC	4098
-FI	6013	D	1760	PC	4022
-FI	6013	D	1160	PC	4121
-FI	6013	D	1450	PC	4123
-FI	8013	D	1760	PC	4088
-FI	8013	D	1160	PC	4089
-FI	8013	D	1450	PC	4090
-"""
-    for line in curvenumbers_string.strip().split("\n"):
-        series, pumpmodel, design, speed, pc, curve_number = line.split("\t")
-        print(
-            f"series:{series}; pumpmodel:{pumpmodel}; design:{design}; speed:{speed}; curvenumber:{curve_number}"
-        )
-        pumpObj = Pump.objects.filter(
-            series=series.strip(),
-            pump_model=pumpmodel.strip(),
-            design_iteration=design.strip(),
-            speed=speed.strip(),
-        )
-        print(pumpObj)
-        pumpObj.update(
-            curve_number=curve_number.strip(),
-            curve_rev=f"{pc.strip()}-{curve_number.strip()}-A",
-        )
+#     curvenumbers_string = """
+# KS	2006	D	3500	PC	4290
+# KS	2006	D	1760	PC	4292
+# KS	2006	D	2900	PC	4291
+# KS	2006	D	1450	PC	4293
+# KS	3006	D	3500	PC	4294
+# KS	3006	D	1760	PC	4296
+# KS	3006	D	2900	PC	4295
+# KS	3006	D	1450	PC	4297
+# KS	1507	D	3500	PC	4298
+# KS	1507	D	1760	PC	4300
+# KS	1507	D	2900	PC	4299
+# KS	1507	D	1450	PC	4301
+# KS	1507	D	1160	PC	4302
+# KS	2007	D	3500	PC	4303
+# KS	2007	D	1760	PC	4305
+# KS	2007	D	2900	PC	4304
+# KS	2007	D	1450	PC	4306
+# KS	2007	D	1160	PC	4307
+# KS	3007	D	3500	PC	4308
+# KS	3007	D	1760	PC	4310
+# KS	3007	D	2900	PC	4309
+# KS	3007	D	1450	PC	4311
+# KS	3007	D	1160	PC	4312
+# KS	2009	D	3500	PC	4313
+# KS	2009	D	1760	PC	4315
+# KS	2009	D	2900	PC	4314
+# KS	2009	D	1450	PC	4316
+# KS	2009	D	1160	PC	4317
+# KS	5007	D	3500	PC	4318
+# KS	5007	D	1760	PC	4320
+# KS	5007	D	2900	PC	4319
+# KS	5007	D	1450	PC	4321
+# KS	5007	D	1160	PC	4322
+# KS	1506	D	3500	PC	4323
+# KS	1506	D	1760	PC	4325
+# KS	1506	D	2900	PC	4324
+# KS	1506	D	1450	PC	4326
+# KS	2009	D	3500	PC	4327
+# KS	2009	D	1760	PC	4329
+# KS	2009	D	2900	PC	4328
+# KS	2009	D	1450	PC	4330
+# KS	2009	D	1160	PC	4331
+# """
+#     for line in curvenumbers_string.strip().split("\n"):
+#         series, pumpmodel, design, speed, pc, curve_number = line.split("\t")
+#         print(
+#             f"series:{series}; pumpmodel:{pumpmodel}; design:{design}; speed:{speed}; curvenumber:{curve_number}"
+#         )
+#         pumpObj = Pump.objects.filter(
+#             series=series.strip(),
+#             pump_model=pumpmodel.strip(),
+#             design_iteration=design.strip(),
+#             speed=speed.strip(),
+#         )
+#         print(pumpObj)
+#         pumpObj.update(
+#             curve_number=curve_number.strip(),
+#             curve_rev=f"{pc.strip()}-{curve_number.strip()} Rev -",
+#         )
+    # fi_pumps = Pump.objects.filter(series="CI")
+    # for pump in fi_pumps:
+    #     rev = pump.curve_rev
+    #     print(f'model:{pump.pump_model}')
+    #     print(f'rev:{rev}')
+    #     if '-' in rev:
+    #         deconstructed_rev = rev.split('-')
+    #         new_rev = f'PC-{deconstructed_rev[1]} Rev A'
+    #         pump.curve_rev = new_rev
+    #         pump.save()
+    ks_list = ["2007"]
+    # for model in ks_list:
+    #     kv_pumps = PumpTrim.objects.filter(pump__series="KV", pump__pump_model=model)
+    #     for pump in kv_pumps:
+    #         # pumpid = Pump.objects.get(id=pump.pump)
+    #         design = getattr(pump.pump, "design_iteration")
+    #         speed = getattr(pump.pump, "speed")
+    #         eng = pump.engineering_data
+    #         trim = pump.trim
+    #         mark = pump.marketing_data
+    #         print(f'model:{model}')
+    #         ks_pump = PumpTrim.objects.get(pump__series="KS", pump__pump_model=model, pump__design_iteration=design, pump__speed=speed, trim=trim)
+    #         ks_pump.engineering_data = eng
+    #         ks_pump.marketing_data = mark
+    #         ks_pump.save()
+    # for model in ks_list:
+    #     NPSH_data_lines = NPSHData.objects.filter(pump__series="KV", pump__pump_model=model)
+    #     for npsh in NPSH_data_lines:
+    #         # pumpid = Pump.objects.get(id=pump.pump)
+    #         design = getattr(npsh.pump, "design_iteration")
+    #         speed = getattr(npsh.pump, "speed")
+    #         flow = npsh.flow
+    #         npsh_head = npsh.npsh
+    #         print(f'model:{model}')
+    #         ks_pump = Pump.objects.get(series="KS", pump_model=model, design_iteration=design, speed=speed)
+    #         ks_npsh_line = NPSHData(pump=ks_pump, flow=flow, npsh=npsh_head)
+    #         ks_npsh_line.save()
 
+    # flatten_inflection_list=[["KV", "2006", 1450, 15],["KV", "2006", 1760, 15],["KV", "2006", 3500, 15],["KV", "2006", 2900, 15]]
+    # for series, model, speed, percent in flatten_inflection_list:
+    #     market_curves = PumpTrim.objects.filter(pump__series=series, pump__pump_model=model, pump__speed=speed).values("marketing_data")
+    #     for curve in market_curves:
+    #         print(f'curve:{curve["marketing_data"]}')
+    #         curve = MarketingCurveDetail.objects.get(id=curve["marketing_data"])
+    #         bep_flow = getattr(curve, "bep_flow")
+    #         print(f"curve:{curve}")
+    #         curvedataqs = MarketingCurveData.objects.filter(curveid=curve).order_by("-flow")
+    #         flat_head = 0
+    #         flow = []
+    #         head = []
+    #         for datapoint in curvedataqs:
+    #             flow.append(datapoint.flow)
+    #             head.append(datapoint.head)
+    #             if datapoint.flow < percent*bep_flow/100:
+    #                 if flat_head == 0:
+    #                     flat_head = datapoint.head
+    #                 else:
+    #                     print(f'before:{datapoint.head}')
+    #                     datapoint.head = flat_head
+    #                     datapoint.save()
+    #                     print(f'after:{datapoint.head}')
+    #         flow = np.array(flow)
+    #         head = np.array(head)
+    #         headcoeffs = list(
+    #             np.polyfit(
+    #                 flow / 0.227125, head / 0.3048, 6
+    #             )
+    #         )
+    #         curve.headcoeffs=headcoeffs
+    #         curve.save()

@@ -2,18 +2,7 @@
 {% load static %}
 
 {% block extrahead %}
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.3.0/css/select.bootstrap4.min.css">
-<link rel="stylesheet" type="text/css"
-    href="https://cdn.datatables.net/responsive/1.0.7/css/responsive.dataTables.min.css">
 
-<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" defer type="text/javascript"></script>
-<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" defer type="text/javascript"></script>
-<script src="https://cdn.datatables.net/select/1.3.0/js/dataTables.select.min.js" defer type="text/javascript"></script>
-<script src="https://cdn.datatables.net/select/1.3.0/js/select.bootstrap4.min.js" defer type="text/javascript"></script>
-<script src="https://cdn.datatables.net/plug-ins/1.10.19/dataRender/datetime.js" defer type="text/javascript"></script>
-<script src="https://cdn.datatables.net/responsive/1.0.7/js/dataTables.responsive.min.js" defer type="text/javascript">
-</script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
@@ -281,26 +270,26 @@
                                                                 <select class="form-control" name="inpipedia">
                                                                     <option disabled="" value="" required>
                                                                         -- Select an option -- </option>
-                                                                    <option value=0.62 {% if outpipe == 0.5 %}selected{% endif %}>0.5</option>
-                                                                    <option value=0.82 {% if outpipe == 0.75 %}selected{% endif %}>0.75</option>
-                                                                    <option value=1.05 {% if outpipe == 1.0 %}selected{% endif %}>1.0</option>
-                                                                    <option value=1.38 {% if outpipe == 1.25 %}selected{% endif %}>1.25</option>
-                                                                    <option value=1.61 {% if outpipe == 1.5 %}selected{% endif %}>1.5</option>
-                                                                    <option value=2.07 {% if outpipe == 2.0 %}selected{% endif %}>2.0</option>
-                                                                    <option value=2.47 {% if outpipe == 2.5 %}selected{% endif %}>2.5</option>
-                                                                    <option value=3.07 {% if outpipe == 3.0 %}selected{% endif %}>3.0</option>
-                                                                    <option value=3.55 {% if outpipe == 3.5 %}selected{% endif %}>3.5</option>
-                                                                    <option value=4.03 {% if outpipe == 4.0 %}selected{% endif %}>4.0</option>
-                                                                    <option value=5.05 {% if outpipe == 5.0 %}selected{% endif %}>5.0</option>
-                                                                    <option value=6.07 {% if outpipe == 6.0 %}selected{% endif %}>6.0</option>
-                                                                    <option value=7.98 {% if outpipe == 8.0 %}selected{% endif %}>8.0</option>
-                                                                    <option value=10.02 {% if outpipe == 10.0 %}selected{% endif %}>10.0</option>
-                                                                    <option value=11.94 {% if outpipe == 12.0 %}selected{% endif %}>12.0</option>
-                                                                    <option value=13.13 {% if outpipe == 14.0 %}selected{% endif %}>14.0</option>
-                                                                    <option value=15 {% if outpipe == 16 %}selected{% endif %}>16.0</option>
-                                                                    <option value=16.66 {% if outpipe == 18.0 %}selected{% endif %}>18.0</option>
-                                                                    <option value=18.81 {% if outpipe == 20.0 %}selected{% endif %}>20.0</option>
-                                                                    <option value=22.63 {% if outpipe == 24.0 %}selected{% endif %}>24.0</option>
+                                                                    <option value=0.62 {% if inpipe == 0.5 %}selected{% endif %}>0.5</option>
+                                                                    <option value=0.82 {% if inpipe == 0.75 %}selected{% endif %}>0.75</option>
+                                                                    <option value=1.05 {% if inpipe == 1.0 %}selected{% endif %}>1.0</option>
+                                                                    <option value=1.38 {% if inpipe == 1.25 %}selected{% endif %}>1.25</option>
+                                                                    <option value=1.61 {% if inpipe == 1.5 %}selected{% endif %}>1.5</option>
+                                                                    <option value=2.07 {% if inpipe == 2.0 %}selected{% endif %}>2.0</option>
+                                                                    <option value=2.47 {% if inpipe == 2.5 %}selected{% endif %}>2.5</option>
+                                                                    <option value=3.07 {% if inpipe == 3.0 %}selected{% endif %}>3.0</option>
+                                                                    <option value=3.55 {% if inpipe == 3.5 %}selected{% endif %}>3.5</option>
+                                                                    <option value=4.03 {% if inpipe == 4.0 %}selected{% endif %}>4.0</option>
+                                                                    <option value=5.05 {% if inpipe == 5.0 %}selected{% endif %}>5.0</option>
+                                                                    <option value=6.07 {% if inpipe == 6.0 %}selected{% endif %}>6.0</option>
+                                                                    <option value=7.98 {% if inpipe == 8.0 %}selected{% endif %}>8.0</option>
+                                                                    <option value=10.02 {% if inpipe == 10.0 %}selected{% endif %}>10.0</option>
+                                                                    <option value=11.94 {% if inpipe == 12.0 %}selected{% endif %}>12.0</option>
+                                                                    <option value=13.13 {% if inpipe == 14.0 %}selected{% endif %}>14.0</option>
+                                                                    <option value=15 {% if inpipe == 16 %}selected{% endif %}>16.0</option>
+                                                                    <option value=16.66 {% if inpipe == 18.0 %}selected{% endif %}>18.0</option>
+                                                                    <option value=18.81 {% if inpipe == 20.0 %}selected{% endif %}>20.0</option>
+                                                                    <option value=22.63 {% if inpipe == 24.0 %}selected{% endif %}>24.0</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
@@ -481,23 +470,6 @@
                 return ele != value;
             });
         }
-        var table1 = $('#table1').DataTable({
-            select: {
-                style: 'multi'
-            },
-            "order": [
-                [3, "desc"]
-            ],
-            columnDefs: [{
-                className: "text-center",
-                targets: [2]
-            }],
-            responsive: true,
-            searching: true,
-            processing: true,
-            stateSave: true
-        });
-
         // enable draggables to be dropped into this
         interact('.dropzone').dropzone({
             // only accept elements matching this CSS selector

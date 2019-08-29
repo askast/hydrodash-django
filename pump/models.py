@@ -69,17 +69,11 @@ class SubmittalCurve(models.Model):
     y_axis_limit = models.FloatField()
     created_on = models.DateTimeField(blank=True)
     current_approved = models.BooleanField(default=False)
+    curve_ids = ArrayField(models.IntegerField())
+    npsh_flows = ArrayField(models.FloatField())
+    npsh_npshs = ArrayField(models.FloatField())
     curve_svg = models.FileField(upload_to="submittal_curves/", null=True, blank=True)
     curve_pdf = models.FileField(upload_to="submittal_curves/", null=True, blank=True)
-    curve_jpg = models.FileField(upload_to="submittal_curves/", null=True, blank=True)
-    # max_motor_hp = 3
-    # min_motor_hp = 1
-    # eff_levels = [60, 65, 70, 73, 75, 77]
-    # power_manual_location_flows = [150, 175, 185, 200]
-    # power_manual_location_heads = [14, 18, 25, 40]
-    # x_axis_limits = [0, 225]
-    # y_axis_limits = [0, 65]
-    # l_per_sec_offset = 0.08
 
     def __str__(self):
         return f"{self.id}: {self.pump.series}{self.pump.pump_model}{self.pump.design_iteration} {self.pump.speed}RPM"

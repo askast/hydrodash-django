@@ -240,7 +240,7 @@ class TestDataReduce(View):
                     name = ""
                     testeng = ""
                     teststnd = ""
-                    inpipedia_in = "" 
+                    inpipedia_in = ""
                     outpipedia_in = ""
                     description = ""
                     pump_type = ""
@@ -614,11 +614,11 @@ def reducedTestPlotData(request):
     flow_110 = chart_flow_fit[int(bep_index*1.1)]/flowunitconversionfactor
     head_110 = chart_head_fit[int(bep_index*1.1)]/headunitconversionfactor
     power_110 = chart_power_fit[int(bep_index*1.1)]/powerunitconversionfactor
-    power_120 = chart_power_fit[int(bep_index*1.2)]/powerunitconversionfactor
+    power_120 = chart_power_fit[min([int(bep_index*1.2), len(chart_power_fit)-1])]/powerunitconversionfactor
     pei_bep_flow = chart_flow_fit[bep_index]/flowunitconversionfactor
     pei_bep_head = chart_head_fit[bep_index]/headunitconversionfactor
     pei_bep_power = chart_power_fit[bep_index]/powerunitconversionfactor
-    print(f'Full_trim: {full_trim}')
+    # print(f'Full_trim: {full_trim}')
     if full_trim:
         pei_result = calculatePEI(bep_flow=pei_bep_flow, bep_head=pei_bep_head, bep_power=pei_bep_power, flow_75=flow_75, head_75=head_75, power_75=power_75, flow_110=flow_110, head_110=head_110, power_110=power_110, power_120=power_120, tempRPM=nominal_rpm, pump_type=pumptype, test_type='BP')
         if pei_result["status"] == "success":

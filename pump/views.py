@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict as dd
 from collections import OrderedDict
 import collections
@@ -7,6 +8,7 @@ from io import BytesIO
 import base64
 import math
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import lines
 from matplotlib.cbook import get_sample_data
@@ -22,6 +24,8 @@ from django.core.files import File
 
 from marketingdata.models import MarketingCurveDetail, MarketingCurveData
 from .models import Pump, PumpTrim, NPSHData, SubmittalCurve, OldTestDetails
+
+mpl.rcParams["font.size"] = 12
 
 
 class PumpListView(TemplateView):
@@ -219,8 +223,7 @@ def createSubmittalCurves(request):
     pumpobj = Pump.objects.get(
         series=series, pump_model=pumpmodel, design_iteration=design, speed=rpm
     )
-    # check if this exact config exists. if it does send the curve as response. along with ids of other configs with same pump.
-    # if not check if any config is empty but pumpobj exists in database. if it does send the most recent to screen. along with ids of other configs.
+    # if not check if any config is empty but pumpobj exists in database, send the most recent to screen. along with ids of other configs.
     # if it doesnt exist in database, make best guesses for config. and generate the curve.
 
     curveObjs = (
@@ -230,6 +233,43 @@ def createSubmittalCurves(request):
     )
 
     npsh_data = NPSHData.objects.filter(pump=pumpobj).values("flow", "npsh")
+    npsh_data = np.array(
+        [[point["flow"] * 4.402862, point["npsh"] * 3.28084] for point in npsh_data]
+    )
+    npsh_data = npsh_data[np.argsort(npsh_data[:, 0])]
+
+    # check if this exact config exists. if it does send the curve as response. along with ids of other configs with same pump.
+    submittal_curves_list = []
+    if SubmittalCurve.objects.filter(pump=pumpobj).count():
+        submittal_curves_list = list(
+            SubmittalCurve.objects.filter(pump=pumpobj)
+            .order_by("-id")
+            .values_list("id", flat=True)
+        )
+        submittal_curve_obj = (
+            SubmittalCurve.objects.filter(pump=pumpobj).order_by("-id").first()
+        )
+        if not max_motor_hp_string:
+            max_motor_hp_string = str(getattr(submittal_curve_obj, "max_motor_hp"))
+        if not min_motor_hp_string:
+            min_motor_hp_string = str(getattr(submittal_curve_obj, "min_motor_hp"))
+        if not eff_levels_string:
+            eff_levels_string = ", ".join(
+                map(str, getattr(submittal_curve_obj, "eff_levels"))
+            )
+        if not power_manual_locations_string:
+            power_manual_locations_string = ""
+            for flow, head in zip(
+                getattr(submittal_curve_obj, "power_manual_location_flows"),
+                getattr(submittal_curve_obj, "power_manual_location_heads"),
+            ):
+                power_manual_locations_string += f"({flow},{head}),"
+            power_manual_locations_string = power_manual_locations_string[:-1]
+        if not x_axis_limit_string:
+            x_axis_limit_string = str(getattr(submittal_curve_obj, "x_axis_limit"))
+        if not y_axis_limit_string:
+            y_axis_limit_string = str(getattr(submittal_curve_obj, "y_axis_limit"))
+
     diameters = []
     curveids = []
     for curveObj in curveObjs:
@@ -266,9 +306,6 @@ def createSubmittalCurves(request):
     bep_flow = bep_flow[-1]
     bep_head = bep_head[-1]
     bep_eff = bep_eff[-1]
-    npsh_data = np.array([[point["flow"] * 4.402862, point["npsh"] * 3.28084] for point in npsh_data])
-    npsh_data = npsh_data[np.argsort(npsh_data[:, 0])]
-    # print(f'NPSH_DATA: {npsh_data}')
 
     std_motor_hps = [
         0.5,
@@ -311,8 +348,8 @@ def createSubmittalCurves(request):
         2500,
         3000,
     ]
-
-    if max_motor_hp_string is None:
+    print(f'maxhp:{max_motor_hp_string}')
+    if not max_motor_hp_string:
         max_trim_max_hp = (
             MarketingCurveData.objects.filter(
                 curveid=MarketingCurveDetail.objects.get(id=curveids[-1])
@@ -322,10 +359,11 @@ def createSubmittalCurves(request):
             * 1.34102
         )
         max_motor_hp = min(hp for hp in std_motor_hps if hp > max_trim_max_hp)
+        max_motor_hp_string = str(max_motor_hp)
     else:
         max_motor_hp = float(max_motor_hp_string)
 
-    if min_motor_hp_string is None:
+    if not min_motor_hp_string:
         min_trim_max_hp = (
             MarketingCurveData.objects.filter(
                 curveid=MarketingCurveDetail.objects.get(id=curveids[0])
@@ -335,6 +373,7 @@ def createSubmittalCurves(request):
             * 1.34102
         )
         min_motor_hp = min(hp for hp in std_motor_hps if hp > min_trim_max_hp)
+        min_motor_hp_string = str(min_motor_hp)
     else:
         min_motor_hp = float(min_motor_hp_string)
 
@@ -343,18 +382,21 @@ def createSubmittalCurves(request):
         dtype=np.float64,
     )
 
-    if eff_levels_string is None:
+    if not eff_levels_string:
         eff_levels = np.array(
             [
-                int(0.78 * bep_eff),
-                int(0.85 * bep_eff),
-                int(0.91 * bep_eff),
-                int(0.945 * bep_eff),
-                int(0.975 * bep_eff),
-                int(bep_eff-1),
+                int(round(0.78 * bep_eff, 0)),
+                int(round(0.85 * bep_eff, 0)),
+                int(round(0.91 * bep_eff, 0)),
+                int(round(0.945 * bep_eff, 0)),
+                int(round(0.975 * bep_eff, 0)),
+                int(round(bep_eff - 1, 0)),
             ],
             dtype=np.float64,
         )
+        eff_levels_string = ", ".join(
+                map(str, eff_levels)
+            )
     else:
         eff_levels = np.array(
             [float(x) for x in eff_levels_string.split(",")], dtype=np.float64
@@ -370,7 +412,7 @@ def createSubmittalCurves(request):
         * 4.402862
     )
 
-    if power_manual_locations_string is None:
+    if not power_manual_locations_string:
         power_loc_flows = np.linspace(0, full_trim_flow_max, len(power_levels))
         power_loc_flows = np.around(power_loc_flows, 0)
         power_loc_heads = np.linspace(0, bep_head, len(power_levels))
@@ -382,6 +424,10 @@ def createSubmittalCurves(request):
             power_manual_locations.append((flow, head))
             power_manual_location_flows.append(flow)
             power_manual_location_heads.append(head)
+        power_manual_locations_string = ""
+        for flow, head in zip(power_manual_location_flows, power_manual_location_heads):
+            power_manual_locations_string += f"({flow},{head}),"
+        power_manual_locations_string = power_manual_locations_string[:-1]
     else:
         power_manual_locations_strings = power_manual_locations_string.replace(
             " ", ""
@@ -398,17 +444,62 @@ def createSubmittalCurves(request):
             power_manual_location_flows.append(float(power_loc_flow))
             power_manual_location_heads.append(float(power_loc_head))
 
-    if x_axis_limit_string is None:
-        x_axis_limits = [0, full_trim_flow_max*1.1]
+    if not x_axis_limit_string:
+        x_axis_limits = [0, full_trim_flow_max * 1.1]
         x_axis_limits = np.around(x_axis_limits, 0)
+        x_axis_limit_string = str(x_axis_limits[1])
     else:
         x_axis_limits = [0, float(x_axis_limit_string)]
 
-    if y_axis_limit_string is None:
+    if not y_axis_limit_string:
         y_axis_limits = [0, bep_head * 1.3]
         y_axis_limits = np.around(y_axis_limits, 0)
+        y_axis_limit_string = str(y_axis_limits[1])
     else:
         y_axis_limits = [0, float(y_axis_limit_string)]
+
+    if SubmittalCurve.objects.filter(
+            pump=pumpobj,
+            max_motor_hp=max_motor_hp,
+            min_motor_hp=min_motor_hp,
+            eff_levels=list(eff_levels),
+            power_manual_location_flows=power_manual_location_flows,
+            power_manual_location_heads=power_manual_location_heads,
+            x_axis_limit=x_axis_limits[1],
+            y_axis_limit=y_axis_limits[1],
+            curve_ids=curveids,
+            npsh_flows=list(npsh_data.T[0] / 4.402862),
+            npsh_npshs=list(npsh_data.T[1] / 3.28084),
+        ).count():
+        submittal_curve_obj = SubmittalCurve.objects.get(
+            pump=pumpobj,
+            max_motor_hp=max_motor_hp,
+            min_motor_hp=min_motor_hp,
+            eff_levels=list(eff_levels),
+            power_manual_location_flows=power_manual_location_flows,
+            power_manual_location_heads=power_manual_location_heads,
+            x_axis_limit=x_axis_limits[1],
+            y_axis_limit=y_axis_limits[1],
+            curve_ids=curveids,
+            npsh_flows=list(npsh_data.T[0] / 4.402862),
+            npsh_npshs=list(npsh_data.T[1] / 3.28084),
+        )
+        graphic = base64.b64encode(submittal_curve_obj.curve_svg.read())
+        graphic = graphic.decode("utf-8")
+
+        context = {
+            "status": "success",
+            "plot": graphic,
+            "maxhp": max_motor_hp_string,
+            "minhp": min_motor_hp_string,
+            "efflevels": eff_levels_string,
+            "powerlocs": power_manual_locations_string,
+            "xlim": x_axis_limit_string,
+            "ylim": y_axis_limit_string,
+            "pdflink": submittal_curve_obj.curve_pdf.url
+        }
+
+        return JsonResponse(context)
 
     newcurve = SubmittalCurve(
         pump=pumpobj,
@@ -420,21 +511,19 @@ def createSubmittalCurves(request):
         x_axis_limit=x_axis_limits[1],
         y_axis_limit=y_axis_limits[1],
         created_on=datetime.now(),
+        curve_ids=curveids,
+        npsh_flows=list(npsh_data.T[0] / 4.402862),
+        npsh_npshs=list(npsh_data.T[1] / 3.28084),
     )
     newcurve.save()
     curveid = getattr(newcurve, "id")
+    submittal_curves_list.append(curveid)
     isopower_cutoff_percent = 15
     curve_rec = Pump.objects.filter(
-            series=series, pump_model=pumpmodel, design_iteration=design, speed=rpm
-        ).first()
-    curveno = getattr(
-        curve_rec,
-        "curve_number",
-    )
-    curverev = getattr(
-        curve_rec,
-        "curve_rev",
-    )
+        series=series, pump_model=pumpmodel, design_iteration=design, speed=rpm
+    ).first()
+    curveno = getattr(curve_rec, "curve_number")
+    curverev = getattr(curve_rec, "curve_rev")
     curvedate = datetime.now().strftime(r"%B %d, %Y")
     inletdia, dischargedia = PumpTrim.objects.filter(
         pump__series=series,
@@ -512,14 +601,14 @@ def createSubmittalCurves(request):
 
     plt.rc("font", family="Assistant")
     fig, (ax_npsh, ax_ft) = plt.subplots(
-        2, sharex=True, gridspec_kw={"height_ratios": [1, 4], "hspace": 0.1}
+        2, sharex=True, gridspec_kw={"height_ratios": [1, 4], "hspace": 0.115}
     )
 
     ax_m = ax_ft.twinx()
     ax_l = ax_m.twiny()
     ax_kpa = ax_l.twinx()
-    fig.subplots_adjust(right=0.83, top=0.8, bottom=0.175)
-    ax_kpa.spines["right"].set_position(("axes", 1.075))
+    fig.subplots_adjust(right=0.87, top=0.875, bottom=0.175)
+    ax_kpa.spines["right"].set_position(("axes", 1.08))
     fig.set_size_inches(11, 8.5)
 
     ax_kpa.set_frame_on(True)
@@ -529,7 +618,7 @@ def createSubmittalCurves(request):
     ax_npsh_kpa = ax_npsh.twinx()
     ax_npsh_kpa.spines["right"].set_position(("axes", 1.075))
     ax_npsh.grid(b=True, which="major", color="k", linestyle="-", linewidth=0.75)
-    ax_npsh.grid(b=True, which="minor", color="k", linestyle="-", linewidth=0.1)
+    ax_npsh.grid(b=True, which="minor", color="#C0C0C0", linestyle="-", linewidth=0.75)
     ax_npsh.minorticks_on()
 
     # automatically update ylim of ax2 when ylim of ax1 changes.
@@ -557,12 +646,12 @@ def createSubmittalCurves(request):
     ax_ft.set_xlabel("FLOW IN GALLONS PER MINUTE", fontsize=15)
     ax_ft.set_ylabel("HEAD IN FEET", fontsize=15)
     ax_l.set_xlabel("L/SEC", fontsize=12)
-    ax_l.xaxis.set_label_coords(l_per_sec_offset, 1.015)
+    ax_l.xaxis.set_label_coords(l_per_sec_offset, 1.0175)
     ax_l.tick_params(direction="out", pad=0)
     ax_m.set_ylabel("HEAD IN METERS", fontsize=12)
     ax_kpa.set_ylabel("HEAD IN KILOPASCALS", fontsize=12)
     ax_ft.grid(b=True, which="major", color="k", linestyle="-", linewidth=0.75)
-    ax_ft.grid(b=True, which="minor", color="k", linestyle="-", linewidth=0.1)
+    ax_ft.grid(b=True, which="minor", color="#C0C0C0", linestyle="-", linewidth=0.75)
     ax_ft.minorticks_on()
     my_legend(
         ax_ft,
@@ -574,7 +663,7 @@ def createSubmittalCurves(request):
         sp_gr_position[0],
         sp_gr_position[1],
         "CURVES BASED ON CLEAR WATER\nWITH SPECIFIC GRAVITY OF 1.0",
-        fontsize=12,
+        fontsize=14,
         bbox=dict(facecolor="white", edgecolor="none", pad=0.0),
         ha="left",
         va="bottom",
@@ -589,16 +678,28 @@ def createSubmittalCurves(request):
         req_npsh_position[0],
         req_npsh_position[1],
         "REQUIRED NPSH",
-        fontsize=12,
+        fontsize=14,
         bbox=dict(facecolor="white", edgecolor="none", pad=0.0),
         ha="left",
         va="bottom",
     )
 
-    for tick in ax_ft.xaxis.get_major_ticks():
-        tick.label.set_fontsize(14)
-    for tick in ax_ft.yaxis.get_major_ticks():
-        tick.label.set_fontsize(14)
+    for label in ax_ft.xaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_ft.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_npsh.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_l.xaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_m.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_kpa.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_npsh_m.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_npsh_kpa.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
 
     x1, x2 = ax_ft.get_xlim()
     ax_ft.set_xlim(0, x2)
@@ -691,67 +792,82 @@ def createSubmittalCurves(request):
     for c in CS_power.collections:
         c.set_dashes([(0, (6.0, 6.0))])
 
-    newax = fig.add_axes([0.13, 0.81, 0.175, 0.175], anchor="SE", zorder=-1)
+    newax = fig.add_axes([0.13, 0.885, 0.175, 0.175], anchor="SE", zorder=-1)
     newax.imshow(logo)
     newax.axis("off")
 
-    newax2 = fig.add_axes([0.31, 0.81, 0.8, 0.2], anchor="SE", zorder=-1)
+    newax2 = fig.add_axes([0.31, 0.85, 0.875, 0.2], anchor="SE", zorder=-1)
     newax2.axis("off")
 
-    x, y = np.array([[0.0, 0.65], [0.27, 0.27]])
+    x, y = np.array([[0.0, 0.635], [0.45, 0.45]])
     line = lines.Line2D(x, y, lw=1, color="k")
     newax2.add_line(line)
 
     plt.gcf().text(
         0.31,
-        0.905,
+        0.98,
         f"{series} Series | Model: {pumpmodel}{design} | {rpm} RPM",
         fontsize=24,
         weight="bold",
     )
     plt.gcf().text(
         0.31,
-        0.875,
-        f'Curve No. {curveno} | {curvedate} | Min. Imp. Dia. {min(diameters)}" | Size {inletdia}x{dischargedia}x{max(diameters)}',
+        0.95,
+        f'Curve No. {curveno} | Min. Imp. Dia. {min(diameters)}" | Size {inletdia}x{dischargedia}x{max(diameters)} | {curvedate}',
         fontsize=14,
         weight="normal",
     )
     plt.gcf().text(
         0.31,
-        0.84,
+        0.915,
         f"Energy Efficiency Rating:",
         fontsize=14,
         weight="bold",
         color="green",
     )
-    plt.gcf().text(
-        0.515,
-        0.84,
-        r"Pump & Motor: $\mathregular{PEI_{CL}}$: "
-        + str(round(peicl, 2))
-        + r" | $\mathregular{ER_{CL}}$: xx",
-        fontsize=14,
-        weight="normal",
-        color="green",
-    )
-    plt.gcf().text(
-        0.515,
-        0.815,
-        r"Pump, Motor & Drive: $\mathregular{PEI_{VL}}$: "
-        + str(round(peivl, 2))
-        + r" | $\mathregular{ER_{VL}}$: xx",
-        fontsize=14,
-        weight="normal",
-        color="green",
-    )
+    if peicl != 0:
+        plt.gcf().text(
+            0.515,
+            0.915,
+            r"Pump & Motor: $\mathregular{PEI_{CL}}$: "
+            + str(round(peicl, 2))
+            + r" | $\mathregular{ER_{CL}}$: "
+            + str(int(round((1 - peicl) * 100, 0))),
+            fontsize=14,
+            weight="normal",
+            color="green",
+        )
+        plt.gcf().text(
+            0.515,
+            0.89,
+            r"Pump, Motor & Drive: $\mathregular{PEI_{VL}}$: "
+            + str(round(peivl, 2))
+            + r" | $\mathregular{ER_{VL}}$: "
+            + str(int(round((1 - peivl) * 100, 0))),
+            fontsize=14,
+            weight="normal",
+            color="green",
+        )
+    else:
+        plt.gcf().text(
+            0.515,
+            0.915,
+            r"Pump & Motor: $\mathregular{PEI_{CL}}$: N/A @1160RPM",
+            fontsize=14,
+            weight="normal",
+            color="green",
+        )
+        plt.gcf().text(
+            0.515,
+            0.89,
+            r"Pump, Motor & Drive: $\mathregular{PEI_{VL}}$: N/A @1160RPM",
+            fontsize=14,
+            weight="normal",
+            color="green",
+        )
 
     plt.gcf().text(
-        0.795,
-        0.125,
-        f"{curverev} {curveid}",
-        fontsize=7,
-        weight="normal",
-        color="k",
+        0.7825, 0.125, f"{curverev}        {curveid}", fontsize=7, weight="normal", color="k"
     )
 
     fine_max_eff = bep_eff
@@ -771,17 +887,14 @@ def createSubmittalCurves(request):
     for plot_flow, plot_head in zip(plot_flows, plot_heads):
         ax_ft.plot(plot_flow, plot_head, "--", color="k", linewidth=0.5)
 
+    fig.patch.set_facecolor("xkcd:mint green")
+
     name = f"{series}{pumpmodel}{design}_{rpm}RPM"
     plt.savefig(
         settings.BASE_DIR + f"/media/Outputs/{name}.jpg", format="jpg", dpi=1000
     )
-    print("Outputs\\" + name + ".jpg file created")
+    # print("Outputs\\" + name + ".jpg file created")
 
-    jpg_buffer = BytesIO()
-    plt.savefig(jpg_buffer, format="jpg", dpi=1000, bbox_inches="tight")
-    jpg_buffer.seek(0)
-    newcurve.curve_jpg.save(f"{curveid}-{name}.jpg", File(jpg_buffer))
-    jpg_buffer.close()
     pdf_buffer = BytesIO()
     plt.savefig(pdf_buffer, format="pdf", dpi=1000, bbox_inches="tight")
     pdf_buffer.seek(0)
@@ -797,7 +910,17 @@ def createSubmittalCurves(request):
     graphic = base64.b64encode(image_svg)
     graphic = graphic.decode("utf-8")
 
-    context = {"status": "success", "plot": graphic}
+    context = {
+        "status": "success",
+        "plot": graphic,
+        "maxhp": max_motor_hp_string,
+        "minhp": min_motor_hp_string,
+        "efflevels": eff_levels_string,
+        "powerlocs": power_manual_locations_string,
+        "xlim": x_axis_limit_string,
+        "ylim": y_axis_limit_string,
+        "pdflink": newcurve.curve_pdf.url
+    }
 
     return JsonResponse(context)
 
@@ -938,7 +1061,7 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
 
     for a, top_flow in zip(polys, top_flows):
         # print(f'polys: {polys}\ntop_flows: {top_flows}')
-        temp_flows = np.linspace(0, (top_flow + 5), 100)
+        temp_flows = np.linspace(0, (top_flow * 1.05), 100)
         poly_heads = np.power(temp_flows, 2) * a
         # print(f'polyheads: {poly_heads}')
         curve_heads = [fheads[i](temp_flows) for i in range(len(fheads))]
@@ -993,7 +1116,7 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
         # print(f'max_head:{max_head}; a:{a}')
         poly_max_flow = math.sqrt(max_head / a)
         poly_min_flow = math.sqrt(min_head / a)
-        temp_flows = np.linspace(0, (poly_max_flow + 5), 100)
+        temp_flows = np.linspace(0, (poly_max_flow * 1.05), 100)
         poly_heads = np.power(temp_flows, 2) * a
         curve_heads = [fheads[i](temp_flows) for i in range(len(fheads))]
         # curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]
@@ -1039,12 +1162,16 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
 
 
 def load_old():
-    path = settings.BASE_DIR + staticfiles_storage.url("profiles/img/testdetailsexport.csv")
+    path = settings.BASE_DIR + staticfiles_storage.url(
+        "profiles/img/testdetailsexport.csv"
+    )
     with open(path) as f:
         reader = csv.reader(f)
         for row in reader:
-            print(f'name={row[1]}\ntesteng={row[2]}\nteststnd={row[3]}\ninpipedia_in={row[4]}\noutpipedia_in={row[5]}\ndescription={row[6]}\ntestconfigs_id={row[7]}\npump_type={row[8]}\ncreated_at={row[9]}\nupdated_at={row[10]}\nfile_name={row[11]}\naveraged={row[12]}')
-            print('#####################################################')
+            print(
+                f"name={row[1]}\ntesteng={row[2]}\nteststnd={row[3]}\ninpipedia_in={row[4]}\noutpipedia_in={row[5]}\ndescription={row[6]}\ntestconfigs_id={row[7]}\npump_type={row[8]}\ncreated_at={row[9]}\nupdated_at={row[10]}\nfile_name={row[11]}\naveraged={row[12]}"
+            )
+            print("#####################################################")
             _, created = OldTestDetails.objects.get_or_create(
                 name=row[1],
                 testeng=row[2],

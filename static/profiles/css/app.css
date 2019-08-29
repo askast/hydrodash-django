@@ -37,7 +37,7 @@ tbody tr.selected td {
 /* Absolute Center Spinner */
 .loading {
     position: fixed;
-    z-index: 999;
+    z-index: 9990;
     height: 2em;
     width: 2em;
     overflow: visible;

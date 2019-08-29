@@ -71,7 +71,7 @@
                                                 {% endfor %}
                                                 <a
                                                     href="#"
-                                                    class="btn {% if trims.hasalldata == 'False' %}disabled{% endif %} btn-primary btn-block"
+                                                    class="btn {% if trims.hasalldata == 'False' %}disabled{% endif %} btn-primary btn-block pump-btn"
                                                     id="btn-{{ series }}-{{ model }}-{{ designit }}-{{ rpm }}"
                                                     >View Submittal Curve</a
                                                 >
@@ -111,10 +111,53 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label>Max Motor HP</label>
+                                            <div class="input-group">
+                                                <input class="form-control" name="maxhp" id="maxhp">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Min Motor HP</label>
+                                            <div class="input-group">
+                                                <input class="form-control" name="minhp" id="minhp">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Efficiency Levels</label>
+                                            <div class="input-group">
+                                                <input class="form-control" name="efflevels" id="efflevels">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Motor HP Label Locations</label>
+                                            <div class="input-group">
+                                                <input class="form-control" name="powerlocs" id="powerlocs">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>X Axis Max Limit</label>
+                                            <div class="input-group">
+                                                <input class="form-control" name="xlim" id="xlim">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Y Axis Max Limit</label>
+                                            <div class="input-group">
+                                                <input class="form-control" name="ylim" id="ylim">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-whitesmoke br">
                         <button type="submit" class="btn btn-primary">Update Curves</button>
+                        <a href="#" class="btn btn-icon icon-left btn-secondary" id="download-btn" download="FileName"><i class="fas fa-file-download"></i> Download PDF</a>
                     </div>
                 </form>
             </div>
@@ -125,12 +168,21 @@
 <script>
     $(document).ready(function() {
         $('.loading').hide();
-        $('.btn').click(function(e) {
+        var series = "";
+        var model = "";
+        var design = "";
+        var rpm = "";
+        $('.pump-btn').click(function(e) {
             e.preventDefault();
             $('.loading').show()
             var values = $(this)
                 .attr('id')
                 .split('-');
+            
+            series = values[1];
+            model = values[2];
+            design = values[3];
+            rpm = values[4];
             $.ajax({
                 type: 'POST',
                 url: "{% url 'submittalcurvegen' %}",
@@ -141,14 +193,54 @@
                 success: function (data) {
                     $('.loading').hide();
                     $("#submittal-curve-img").attr("src","data:image/svg+xml;base64," + data.plot);
+                    $('#maxhp').val(data.maxhp);
+                    $('#minhp').val(data.minhp);
+                    $('#efflevels').val(data.efflevels);
+                    $('#powerlocs').val(data.powerlocs);
+                    $('#xlim').val(data.xlim);
+                    $('#ylim').val(data.ylim);
+                    $('#download-btn').attr('href',data.pdflink);
+                    $('#download-btn').attr('download',series+model+design+" "+rpm+"RPM.PDF");
                     $("#modal1").modal('show');
                 },
                 error: function (data) {
                     $('.loading').hide();
+                    $("#submittal-curve-img").attr("src","");
                     $("#modal1").modal('show');
                 }
             });
         });
+        $('#update-submittal-curve-form').submit(function(e) {
+            e.preventDefault();
+            $("#modal1").modal('hide');
+            $('.loading').show()
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'submittalcurvegen' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: $("#update-submittal-curve-form").serialize() + "&series=" + series + "&model=" + model + "&design=" + design + "&rpm=" + rpm,
+                success: function (data) {
+                    $('.loading').hide();
+                    $("#submittal-curve-img").attr("src","data:image/svg+xml;base64," + data.plot);
+                    $('#maxhp').val(data.maxhp);
+                    $('#minhp').val(data.minhp);
+                    $('#efflevels').val(data.efflevels);
+                    $('#powerlocs').val(data.powerlocs);
+                    $('#xlim').val(data.xlim);
+                    $('#ylim').val(data.ylim);
+                    $('#download-btn').attr('href',data.pdflink);
+                    $("#modal1").modal('show');
+                },
+                error: function (data) {
+                    $('.loading').hide();
+                    $("#submittal-curve-img").attr("src","");
+                    $("#modal1").modal('show');
+                }
+            });
+        });
+
     });
 </script>
 {% endblock content%}

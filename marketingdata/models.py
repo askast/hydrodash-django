@@ -45,4 +45,4 @@ class MarketingCurveData(models.Model):
     efficiency = models.FloatField()
 
     def __str__(self):
-        return self.curveid.curvename
+        return f"{self.curveid.id} {self.curveid.curvename} flow:{self.flow*4.402862} head:{self.head*3.28084}"
