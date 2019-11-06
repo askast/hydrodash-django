@@ -268,17 +268,34 @@ def calculatePEI(
     motor_controller_loss_75 = motorLossFull * z_75
     motor_controller_loss_bep = motorLossFull * z_bep
 
-    drive_input_power_25 = pump_input_power_25 + motor_controller_loss_25
-    drive_input_power_50 = pump_input_power_50 + motor_controller_loss_50
-    drive_input_power_75 = pump_input_power_75 + motor_controller_loss_75
-    drive_input_power_bep = bep_power_corr + motor_controller_loss_bep
+    controller_input_power_25 = pump_input_power_25 + motor_controller_loss_25
+    controller_input_power_50 = pump_input_power_50 + motor_controller_loss_50
+    controller_input_power_75 = pump_input_power_75 + motor_controller_loss_75
+    controller_input_power_bep = bep_power_corr + motor_controller_loss_bep
 
     PERvl = (
-        0.25 * drive_input_power_25
-        + 0.25 * drive_input_power_50
-        + 0.25 * drive_input_power_75
-        + 0.25 * drive_input_power_bep
+        0.25 * controller_input_power_25
+        + 0.25 * controller_input_power_50
+        + 0.25 * controller_input_power_75
+        + 0.25 * controller_input_power_bep
     )
     PEIvl = PERvl / PERstd
 
-    return {"status": "success", "PEIcl": PEIcl, "PEIvl": PEIvl}
+    return {
+        "status": "success",
+        "PEIcl": PEIcl,
+        "PEIvl": PEIvl,
+        "flow_bep": bep_flow_corr,
+        "head_75": head_75_corr,
+        "head_bep": bep_head_corr,
+        "head_110": head_110_corr,
+        "power_75": drive_input_power_75,
+        "power_bep": drive_input_power_bep,
+        "power_110": drive_input_power_110,
+        "controller_power_25": controller_input_power_25,
+        "controller_power_50": controller_input_power_50,
+        "controller_power_75": controller_input_power_75,
+        "controller_power_bep": controller_input_power_bep,
+        "motor_hp": motorHP,
+        "motor_eff": motorEfficiency,
+    }

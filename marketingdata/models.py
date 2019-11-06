@@ -34,7 +34,7 @@ class MarketingCurveDetail(models.Model):
     data_source = models.ForeignKey(ReducedPumpTestDetails, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.curvename
+        return f"{self.id} {self.curvename}"
 
 
 class MarketingCurveData(models.Model):

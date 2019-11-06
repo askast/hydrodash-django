@@ -88,7 +88,7 @@ def fudgeData(request):
         head = head_poly(flow)
         headcoeffs = list(
             np.polyfit(
-                flow / flowunitconversionfactor, head / headunitconversionfactor, 6
+                flow / flowunitconversionfactor, head / headunitconversionfactor, 5
             )
         )
     else:
@@ -96,7 +96,7 @@ def fudgeData(request):
         head = head_poly(flow)
         headcoeffs = list(
             np.polyfit(
-                flow / flowunitconversionfactor, head / headunitconversionfactor, 6
+                flow / flowunitconversionfactor, head / headunitconversionfactor, 5
             )
         )
 
@@ -193,7 +193,7 @@ def fudgeData(request):
     effcoeffs = list(np.polyfit(flow / flowunitconversionfactor, eff, 6))
     powercoeffs = list(
         np.polyfit(
-            flow / flowunitconversionfactor, power / powerunitconversionfactor, 6
+            flow / flowunitconversionfactor, power / powerunitconversionfactor, 5
         )
     )
     power = list(power / powerunitconversionfactor)
@@ -739,136 +739,3 @@ class NPSHDataInput(View):
 
         context = {"status": "success"}
         return JsonResponse(context)
-
-
-def populatePumps():
-#     curvenumbers_string = """
-# KS	2006	D	3500	PC	4290
-# KS	2006	D	1760	PC	4292
-# KS	2006	D	2900	PC	4291
-# KS	2006	D	1450	PC	4293
-# KS	3006	D	3500	PC	4294
-# KS	3006	D	1760	PC	4296
-# KS	3006	D	2900	PC	4295
-# KS	3006	D	1450	PC	4297
-# KS	1507	D	3500	PC	4298
-# KS	1507	D	1760	PC	4300
-# KS	1507	D	2900	PC	4299
-# KS	1507	D	1450	PC	4301
-# KS	1507	D	1160	PC	4302
-# KS	2007	D	3500	PC	4303
-# KS	2007	D	1760	PC	4305
-# KS	2007	D	2900	PC	4304
-# KS	2007	D	1450	PC	4306
-# KS	2007	D	1160	PC	4307
-# KS	3007	D	3500	PC	4308
-# KS	3007	D	1760	PC	4310
-# KS	3007	D	2900	PC	4309
-# KS	3007	D	1450	PC	4311
-# KS	3007	D	1160	PC	4312
-# KS	2009	D	3500	PC	4313
-# KS	2009	D	1760	PC	4315
-# KS	2009	D	2900	PC	4314
-# KS	2009	D	1450	PC	4316
-# KS	2009	D	1160	PC	4317
-# KS	5007	D	3500	PC	4318
-# KS	5007	D	1760	PC	4320
-# KS	5007	D	2900	PC	4319
-# KS	5007	D	1450	PC	4321
-# KS	5007	D	1160	PC	4322
-# KS	1506	D	3500	PC	4323
-# KS	1506	D	1760	PC	4325
-# KS	1506	D	2900	PC	4324
-# KS	1506	D	1450	PC	4326
-# KS	2009	D	3500	PC	4327
-# KS	2009	D	1760	PC	4329
-# KS	2009	D	2900	PC	4328
-# KS	2009	D	1450	PC	4330
-# KS	2009	D	1160	PC	4331
-# """
-#     for line in curvenumbers_string.strip().split("\n"):
-#         series, pumpmodel, design, speed, pc, curve_number = line.split("\t")
-#         print(
-#             f"series:{series}; pumpmodel:{pumpmodel}; design:{design}; speed:{speed}; curvenumber:{curve_number}"
-#         )
-#         pumpObj = Pump.objects.filter(
-#             series=series.strip(),
-#             pump_model=pumpmodel.strip(),
-#             design_iteration=design.strip(),
-#             speed=speed.strip(),
-#         )
-#         print(pumpObj)
-#         pumpObj.update(
-#             curve_number=curve_number.strip(),
-#             curve_rev=f"{pc.strip()}-{curve_number.strip()} Rev -",
-#         )
-    # fi_pumps = Pump.objects.filter(series="CI")
-    # for pump in fi_pumps:
-    #     rev = pump.curve_rev
-    #     print(f'model:{pump.pump_model}')
-    #     print(f'rev:{rev}')
-    #     if '-' in rev:
-    #         deconstructed_rev = rev.split('-')
-    #         new_rev = f'PC-{deconstructed_rev[1]} Rev A'
-    #         pump.curve_rev = new_rev
-    #         pump.save()
-    ks_list = ["2007"]
-    # for model in ks_list:
-    #     kv_pumps = PumpTrim.objects.filter(pump__series="KV", pump__pump_model=model)
-    #     for pump in kv_pumps:
-    #         # pumpid = Pump.objects.get(id=pump.pump)
-    #         design = getattr(pump.pump, "design_iteration")
-    #         speed = getattr(pump.pump, "speed")
-    #         eng = pump.engineering_data
-    #         trim = pump.trim
-    #         mark = pump.marketing_data
-    #         print(f'model:{model}')
-    #         ks_pump = PumpTrim.objects.get(pump__series="KS", pump__pump_model=model, pump__design_iteration=design, pump__speed=speed, trim=trim)
-    #         ks_pump.engineering_data = eng
-    #         ks_pump.marketing_data = mark
-    #         ks_pump.save()
-    # for model in ks_list:
-    #     NPSH_data_lines = NPSHData.objects.filter(pump__series="KV", pump__pump_model=model)
-    #     for npsh in NPSH_data_lines:
-    #         # pumpid = Pump.objects.get(id=pump.pump)
-    #         design = getattr(npsh.pump, "design_iteration")
-    #         speed = getattr(npsh.pump, "speed")
-    #         flow = npsh.flow
-    #         npsh_head = npsh.npsh
-    #         print(f'model:{model}')
-    #         ks_pump = Pump.objects.get(series="KS", pump_model=model, design_iteration=design, speed=speed)
-    #         ks_npsh_line = NPSHData(pump=ks_pump, flow=flow, npsh=npsh_head)
-    #         ks_npsh_line.save()
-
-    # flatten_inflection_list=[["KV", "2006", 1450, 15],["KV", "2006", 1760, 15],["KV", "2006", 3500, 15],["KV", "2006", 2900, 15]]
-    # for series, model, speed, percent in flatten_inflection_list:
-    #     market_curves = PumpTrim.objects.filter(pump__series=series, pump__pump_model=model, pump__speed=speed).values("marketing_data")
-    #     for curve in market_curves:
-    #         print(f'curve:{curve["marketing_data"]}')
-    #         curve = MarketingCurveDetail.objects.get(id=curve["marketing_data"])
-    #         bep_flow = getattr(curve, "bep_flow")
-    #         print(f"curve:{curve}")
-    #         curvedataqs = MarketingCurveData.objects.filter(curveid=curve).order_by("-flow")
-    #         flat_head = 0
-    #         flow = []
-    #         head = []
-    #         for datapoint in curvedataqs:
-    #             flow.append(datapoint.flow)
-    #             head.append(datapoint.head)
-    #             if datapoint.flow < percent*bep_flow/100:
-    #                 if flat_head == 0:
-    #                     flat_head = datapoint.head
-    #                 else:
-    #                     print(f'before:{datapoint.head}')
-    #                     datapoint.head = flat_head
-    #                     datapoint.save()
-    #                     print(f'after:{datapoint.head}')
-    #         flow = np.array(flow)
-    #         head = np.array(head)
-    #         headcoeffs = list(
-    #             np.polyfit(
-    #                 flow / 0.227125, head / 0.3048, 6
-    #             )
-    #         )
-    #         curve.headcoeffs=headcoeffs
-    #         curve.save()

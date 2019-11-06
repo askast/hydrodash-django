@@ -150,6 +150,16 @@
                                                 <input class="form-control" name="ylim" id="ylim">
                                             </div>
                                         </div>
+                                        <div class="form-group">
+                                            <div class="control-label">Attempt Smoothing</div>
+                                            <label class="custom-switch mt-2">
+                                                <input type="checkbox" name="smooth"
+                                                    class="custom-switch-input" id="smooth">
+                                                <span class="custom-switch-indicator"></span>
+                                                <span class="custom-switch-description"> Select if
+                                                    you want to try artificially smoothing the efficiency contours. Use sparingly.</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -175,6 +185,7 @@
         $('.pump-btn').click(function(e) {
             e.preventDefault();
             $('.loading').show()
+            
             var values = $(this)
                 .attr('id')
                 .split('-');

@@ -219,6 +219,7 @@ def createSubmittalCurves(request):
     power_manual_locations_string = request.POST.get("powerlocs", None)
     x_axis_limit_string = request.POST.get("xlim", None)
     y_axis_limit_string = request.POST.get("ylim", None)
+    tri_smoothing = request.POST.get("smooth", None)
 
     pumpobj = Pump.objects.get(
         series=series, pump_model=pumpmodel, design_iteration=design, speed=rpm
@@ -287,6 +288,7 @@ def createSubmittalCurves(request):
     power_polys = []
     peicl = 0
     peivl = 0
+
     for curve in curveids:
         # print(f'curve:{curve}')
         curve = MarketingCurveDetail.objects.filter(id=curve).first()
@@ -302,6 +304,25 @@ def createSubmittalCurves(request):
         if temp_peicl != 0 and temp_peivl != 0:
             peicl = temp_peicl
             peivl = temp_peivl
+    if rpm in ["1450", "2900"]:
+        if rpm == "1450":
+            pei_rpm = 1760
+        else:
+            pei_rpm = 3500
+        max_trim = max(diameters)
+        peicl, peivl = PumpTrim.objects.filter(
+            pump__series=series,
+            pump__pump_model=pumpmodel,
+            pump__design_iteration=design,
+            pump__speed=pei_rpm,
+            trim=max_trim
+        ).values_list(
+            "marketing_data__peicl",
+            "marketing_data__peivl",
+        )[
+            0
+        ]
+
 
     bep_flow = bep_flow[-1]
     bep_head = bep_head[-1]
@@ -385,11 +406,11 @@ def createSubmittalCurves(request):
     if not eff_levels_string:
         eff_levels = np.array(
             [
-                int(round(0.78 * bep_eff, 0)),
-                int(round(0.85 * bep_eff, 0)),
-                int(round(0.91 * bep_eff, 0)),
-                int(round(0.945 * bep_eff, 0)),
-                int(round(0.975 * bep_eff, 0)),
+                int(round(min(0.78 * bep_eff, bep_eff-6), 0)),
+                int(round(min(0.85 * bep_eff, bep_eff-5), 0)),
+                int(round(min(0.91 * bep_eff, bep_eff-4), 0)),
+                int(round(min(0.945 * bep_eff, bep_eff-3), 0)),
+                int(round(min(0.975 * bep_eff, bep_eff-2), 0)),
                 int(round(bep_eff - 1, 0)),
             ],
             dtype=np.float64,
@@ -547,7 +568,7 @@ def createSubmittalCurves(request):
     diameter_label_head_offset = 0.02 * bep_head
 
     sp_gr_position = [bep_flow * 0.04, bep_head * 0.05]
-    req_npsh_position = [bep_flow * 0.5, np.amax(npsh_data.T[1]) / 2]
+    req_npsh_position = [bep_flow * 0.5, np.amax(npsh_data.T[1]) / 1.5]
 
     a_max = head_polys[-1](full_trim_flow_max).item() / pow(full_trim_flow_max, 2)
     temp_flows = np.linspace(0, (full_trim_flow_max + 5), 100)
@@ -627,6 +648,7 @@ def createSubmittalCurves(request):
     ax_npsh.callbacks.connect("ylim_changed", convert_ax_npsh_to_kpa)
     ax_npsh.callbacks.connect("ylim_changed", convert_ax_npsh_to_m)
     x_npsh = np.linspace(np.amin(npsh_data.T[0]), np.amax(npsh_data.T[0]), 300)
+    print(f'npsh x = {npsh_data.T[0]}')
     npsh_spline = InterpolatedUnivariateSpline(npsh_data.T[0], npsh_data.T[1])
     smooth_npsh = npsh_spline(x_npsh)
     ax_npsh.plot(x_npsh, smooth_npsh, color="k", linewidth=0.75)
@@ -731,14 +753,27 @@ def createSubmittalCurves(request):
     ymid = np.array(headpoints_for_eff_contour)[triang_eff.triangles].mean(axis=1)
     mask = np.where(ymid < fheadsmall(xmid), 1, 0)
     triang_eff.set_mask(mask)
-
-    ax_ft.tricontour(
-        triang_eff,
-        effpoints_for_eff_contour,
-        levels=eff_levels,
-        colors="k",
-        linewidths=0.5,
-    )
+    
+    
+    if tri_smoothing:
+        refiner = tri.UniformTriRefiner(triang_eff)
+        tri_refi, z_test_refi = refiner.refine_field(effpoints_for_eff_contour, subdiv=6)
+        ax_ft.tricontour(
+            tri_refi,
+            z_test_refi,
+            levels=eff_levels,
+            colors="k",
+            linewidths=0.5,
+        )
+    else:
+        ax_ft.tricontour(
+            triang_eff,
+            effpoints_for_eff_contour,
+            levels=eff_levels,
+            colors="k",
+            linewidths=0.5,
+        )
+    
 
     for flow, head, eff in zip(
         eff_lab_x, eff_lab_y, np.concatenate([eff_levels, eff_levels[::-1]])
@@ -825,34 +860,62 @@ def createSubmittalCurves(request):
         weight="bold",
         color="green",
     )
+
+    if rpm == "1450" or rpm == "1760":
+        poles = 4
+    elif rpm == "2900" or rpm == "3500":
+        poles = 2
+    else:
+        poles = 6
+
     if peicl != 0:
-        plt.gcf().text(
-            0.515,
-            0.915,
-            r"Pump & Motor: $\mathregular{PEI_{CL}}$: "
-            + str(round(peicl, 2))
-            + r" | $\mathregular{ER_{CL}}$: "
-            + str(int(round((1 - peicl) * 100, 0))),
-            fontsize=14,
-            weight="normal",
-            color="green",
-        )
-        plt.gcf().text(
-            0.515,
-            0.89,
-            r"Pump, Motor & Drive: $\mathregular{PEI_{VL}}$: "
-            + str(round(peivl, 2))
-            + r" | $\mathregular{ER_{VL}}$: "
-            + str(int(round((1 - peivl) * 100, 0))),
-            fontsize=14,
-            weight="normal",
-            color="green",
-        )
+        if rpm in ["1760", "3500"]:
+            plt.gcf().text(
+                0.515,
+                0.915,
+                f'DOE Basic Model Number: {series}{pumpmodel}{design}-{poles}P-PM',
+                fontsize=14,
+                weight="normal",
+                color="green",
+            )
+            plt.gcf().text(
+                0.515,
+                0.89,
+                r"Pump & Motor: $\mathregular{PEI_{CL}}$: "
+                + str(round(peicl, 2))
+                + r" | $\mathregular{ER_{CL}}$: "
+                + str(int(round((1 - peicl) * 100, 0))),
+                fontsize=14,
+                weight="normal",
+                color="green",
+            )
+        else:
+            plt.gcf().text(
+                0.515,
+                0.915,
+                f'DOE Basic Model Number: {series}{pumpmodel}{design}-{poles}P-PM',
+                fontsize=14,
+                weight="normal",
+                color="green",
+            )
+            plt.gcf().text(
+                0.515,
+                0.89,
+                r"Pump & Motor: $\mathregular{PEI_{CL}}$: "
+                + str(round(peicl, 2))
+                + r"$^\dagger$"
+                + r" | $\mathregular{ER_{CL}}$: "
+                + str(int(round((1 - peicl) * 100, 0)))
+                + r"$^\dagger$",
+                fontsize=14,
+                weight="normal",
+                color="green",
+            )
     else:
         plt.gcf().text(
             0.515,
             0.915,
-            r"Pump & Motor: $\mathregular{PEI_{CL}}$: N/A @1160RPM",
+            f'DOE Basic Model Number: N/A @1160RPM',
             fontsize=14,
             weight="normal",
             color="green",
@@ -860,7 +923,7 @@ def createSubmittalCurves(request):
         plt.gcf().text(
             0.515,
             0.89,
-            r"Pump, Motor & Drive: $\mathregular{PEI_{VL}}$: N/A @1160RPM",
+            r"Pump & Motor: $\mathregular{PEI_{CL}}$: N/A @1160RPM",
             fontsize=14,
             weight="normal",
             color="green",
@@ -869,6 +932,10 @@ def createSubmittalCurves(request):
     plt.gcf().text(
         0.7825, 0.125, f"{curverev}        {curveid}", fontsize=7, weight="normal", color="k"
     )
+    if rpm in ["1450", "2900"]:
+        plt.gcf().text(
+            0.125, 0.12, r"$^\dagger$"+"PEI/ER values based on 60Hz test.", fontsize=10, weight="normal", color="k"
+        )
 
     fine_max_eff = bep_eff
     fine_max_eff_flow = bep_flow
@@ -1061,7 +1128,7 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
 
     for a, top_flow in zip(polys, top_flows):
         # print(f'polys: {polys}\ntop_flows: {top_flows}')
-        temp_flows = np.linspace(0, (top_flow * 1.05), 100)
+        temp_flows = np.linspace(0, (top_flow * 1.05), 60)
         poly_heads = np.power(temp_flows, 2) * a
         # print(f'polyheads: {poly_heads}')
         curve_heads = [fheads[i](temp_flows) for i in range(len(fheads))]
@@ -1116,7 +1183,7 @@ def get_points_mesh(flow_max_cutoffs, fheads, feffs, fpowers):
         # print(f'max_head:{max_head}; a:{a}')
         poly_max_flow = math.sqrt(max_head / a)
         poly_min_flow = math.sqrt(min_head / a)
-        temp_flows = np.linspace(0, (poly_max_flow * 1.05), 100)
+        temp_flows = np.linspace(0, (poly_max_flow * 1.05), 60)
         poly_heads = np.power(temp_flows, 2) * a
         curve_heads = [fheads[i](temp_flows) for i in range(len(fheads))]
         # curve_powers = [fpowers[i](temp_flows) for i in range(len(fheads))]

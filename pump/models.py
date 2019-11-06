@@ -69,6 +69,7 @@ class SubmittalCurve(models.Model):
     y_axis_limit = models.FloatField()
     created_on = models.DateTimeField(blank=True)
     current_approved = models.BooleanField(default=False)
+    # smoothed = models.BooleanField(default=False)
     curve_ids = ArrayField(models.IntegerField())
     npsh_flows = ArrayField(models.FloatField())
     npsh_npshs = ArrayField(models.FloatField())
