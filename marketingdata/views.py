@@ -100,6 +100,18 @@ def fudgeData(request):
             )
         )
 
+
+    eff = head * flow / (power * 367)
+
+    bep_eff = np.amax(eff)
+
+    if targeteff:
+        targeteff = float(targeteff)
+        effmultiplier = targeteff / (bep_eff * 100)
+        eff = eff * effmultiplier
+    
+    power = head * flow / (eff * 367)
+
     if bearinglossremoval:
         if bearingframe == "H":
             if rpm == 1160:
@@ -163,11 +175,6 @@ def fudgeData(request):
     bep_eff = np.amax(eff)
     bep_index = list(eff).index(bep_eff)
     bep_flow = flow[bep_index]
-
-    if targeteff:
-        targeteff = float(targeteff)
-        effmultiplier = targeteff / (bep_eff * 100)
-        eff = eff * effmultiplier
 
     if bepshift:
         shiftflow = []
