@@ -16,6 +16,8 @@ class Pump(models.Model):
         ("SFI", "SFI"),
         ("SCI", "SCI"),
         ("Circ", "Residential Circulator"),
+        ("1600", "1600"),
+        ("1900", "1900"),
     )
     speed_choices = (
         (1160, "1160 RPM"),

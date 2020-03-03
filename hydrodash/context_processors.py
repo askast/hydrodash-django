@@ -8,6 +8,7 @@ def context(request):
                     "icon": "fas fa-server",
                     "name": "Reduced Test Data",
                 },
+                {"url": "/testdata/directdatainput", "icon": "fas fa-lock", "name": "Direct Data Input"},
             ],
             "Design Data": [
                 {
@@ -40,6 +41,11 @@ def context(request):
                     "url": "/marketingdata/marketingnpshinput",
                     "icon": "fas fa-server",
                     "name": "NPSH Data",
+                },
+                {
+                    "url": "/marketingdata/marketingmap",
+                    "icon": "fas fa-chart-area",
+                    "name": "Family of Curves",
                 },
             ],
             "PEI": [

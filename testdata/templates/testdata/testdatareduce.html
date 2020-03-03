@@ -85,7 +85,8 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                        {% if choice == 'FM\\FLOW' %}selected{% endif %}>
+                                                                        {% if choice == 'FM\\FLOW' %}selected{% endif %}
+                                                                        {% if choice == 'CTS2\\FLOW_AVERAGE' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -107,7 +108,8 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                        {% if choice == 'FM\\HEAD' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\HEAD' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\HEAD_AVERAGE' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -129,7 +131,8 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                        {% if choice == 'FM\\HP' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\HP' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\HP_AVERAGE' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -151,7 +154,8 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                        {% if choice == 'FM\\SYST' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\SYST' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\TEMP_AVERAGE' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -175,7 +179,8 @@
                                                                     <option>None</option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                        {% if choice == 'FM\\RPM' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\RPM' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\RPM_READING' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -464,7 +469,7 @@
 <script>
     $(document).ready(function () {
         var deletedpoints = []
-
+        var teststand = "{{ stand }}"
         function arrayRemove(arr, value) {
             return arr.filter(function (ele) {
                 return ele != value;
@@ -623,7 +628,7 @@
                 "{% url 'datareducetabledata' %}?rawtestids=" + rawtestidsstring + "&flowfield=" +
                 flowfield + "&flowunits=" + flowunits + "&headfield=" + headfield + "&headunits=" +
                 headunits + "&powerfield=" + powerfield + "&powerunits=" + powerunits +
-                "&tempfield=" + tempfield + "&tempunits=" + tempunits + "&rpmfield=" + rpmfield,
+                "&tempfield=" + tempfield + "&tempunits=" + tempunits + "&rpmfield=" + rpmfield + "&stand=" + teststand,
                 function (data) {
                     chart1data = [];
                     testdata = data.testdata;
@@ -707,7 +712,7 @@
                         'X-CSRFToken': '{{ csrf_token }}'
                     },
                     data: $('#form1').serialize() + "&testdata=" + JSON.stringify(testdata) +
-                        "&source=" + rawtestids,
+                    "&source=" + rawtestids + "&stand=" + teststand,
                     success: function (data) {
                         if (data.result == "success") {
                             Swal.fire({

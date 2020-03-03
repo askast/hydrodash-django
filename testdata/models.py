@@ -90,7 +90,7 @@ class ReducedPumpTestDetails(models.Model):
     testloop = models.CharField(max_length=100, blank=True, null=True)
     discharge_pipe_dia = models.FloatField()
     inlet_pipe_dia = models.FloatField()
-    description = models.CharField(max_length=100, blank=True, null=True)
+    description = models.CharField(max_length=2000, blank=True, null=True)
     testdate = models.DateTimeField()
     bep_flow = models.FloatField(blank=True, null=True)
     bep_head = models.FloatField(blank=True, null=True)
@@ -104,7 +104,7 @@ class ReducedPumpTestDetails(models.Model):
         max_length=10, blank=True, null=True, choices=bearingframe_choices
     )
     data_sources = models.ManyToManyField(
-        "testdata.RawTestsList", related_name="used_in"
+        "testdata.RawTestsList", related_name="used_in", blank=True
     )
 
     def __str__(self):

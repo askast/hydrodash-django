@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
-from .views import TestListView, RawTestsListData, RawTestPlotView, RawTestPlotData, TestDataReduce, testDataReduceTableData, testNameValidate, reduceTestData, ReducedTestPlotView, ReducedTestListView, ReducedTestsListData, reducedTestPlotData, addSummary
+from .views import TestListView, RawTestsListData, RawTestPlotView, RawTestPlotData, TestDataReduce, testDataReduceTableData, testNameValidate, reduceTestData, ReducedTestPlotView, ReducedTestListView, ReducedTestsListData, reducedTestPlotData, addSummary, DirectDataInputView
 
 urlpatterns = [
     path('', login_required(TestListView.as_view()), name='testdata-testlist'),
@@ -28,4 +28,6 @@ urlpatterns = [
          name='reducedtestplotdata'),
     path('addsummary', login_required(addSummary),
          name='addreducedtestdatasummary'),
+    path('directdatainput', login_required(DirectDataInputView.as_view()),
+         name='directdatainput'),
 ]

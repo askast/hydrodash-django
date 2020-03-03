@@ -15,6 +15,8 @@ from matplotlib.cbook import get_sample_data
 import matplotlib.tri as tri
 from scipy.interpolate import InterpolatedUnivariateSpline
 import csv
+import random
+import string
 
 from django.http import JsonResponse
 from django.views.generic.base import TemplateView
@@ -26,6 +28,12 @@ from marketingdata.models import MarketingCurveDetail, MarketingCurveData
 from .models import Pump, PumpTrim, NPSHData, SubmittalCurve, OldTestDetails
 
 mpl.rcParams["font.size"] = 12
+
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
 
 
 class PumpListView(TemplateView):
@@ -558,6 +566,9 @@ def createSubmittalCurves(request):
         0
     ]
 
+    if inletdia == 1.38:
+        inletdia = 1.25
+
     inletdia = ("%f" % round_pipe_dia(inletdia)).rstrip("0").rstrip(".")
     dischargedia = ("%f" % round_pipe_dia(dischargedia)).rstrip("0").rstrip(".")
 
@@ -963,14 +974,15 @@ def createSubmittalCurves(request):
     # print("Outputs\\" + name + ".jpg file created")
 
     pdf_buffer = BytesIO()
+    random_string = randomString()
     plt.savefig(pdf_buffer, format="pdf", dpi=1000, bbox_inches="tight")
     pdf_buffer.seek(0)
-    newcurve.curve_pdf.save(f"{curveid}-{name}.pdf", File(pdf_buffer))
+    newcurve.curve_pdf.save(f"{curveid}-{name}_{random_string}.pdf", File(pdf_buffer))
     pdf_buffer.close()
     svg_buffer = BytesIO()
     plt.savefig(svg_buffer, format="svg", dpi=1000, bbox_inches="tight")
     svg_buffer.seek(0)
-    newcurve.curve_svg.save(f"{curveid}-{name}.svg", File(svg_buffer))
+    newcurve.curve_svg.save(f"{curveid}-{name}_{random_string}.svg", File(svg_buffer))
     image_svg = svg_buffer.getvalue()
     svg_buffer.close()
 
@@ -1046,7 +1058,7 @@ def round_of_eff(number):
 
 
 def round_pipe_dia(x):
-    return 0.5 * round(x / 0.5)
+    return 0.25 * round(x / 0.25)
 
 
 # def intercept(x, y1, y2):

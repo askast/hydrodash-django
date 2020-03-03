@@ -102,15 +102,14 @@ def fudgeData(request):
 
 
     eff = head * flow / (power * 367)
-
+    print(f"eff:{eff}")
     bep_eff = np.amax(eff)
 
     if targeteff:
         targeteff = float(targeteff)
         effmultiplier = targeteff / (bep_eff * 100)
-        eff = eff * effmultiplier
+        power = power / effmultiplier
     
-    power = head * flow / (eff * 367)
 
     if bearinglossremoval:
         if bearingframe == "H":
@@ -364,7 +363,10 @@ def addMarketingData(request):
     flow_110 = flow[int(bep_index * 1.1)]
     head_110 = head[int(bep_index * 1.1)]
     power_110 = power[int(bep_index * 1.1)]
-    power_120 = power[int(bep_index * 1.2)]
+    if 1.2*bep_index < len(eff):
+        power_120 = power[int(bep_index * 1.2)]
+    else:
+        power_120 = power[-1]
     pei_bep_flow = flow[bep_index]
     pei_bep_head = head[bep_index]
     pei_bep_power = power[bep_index]
@@ -718,7 +720,7 @@ class NPSHDataInput(View):
 
         values = []
         for line in npshText.split('\n'):
-            print(f'line: {line}')
+            # print(f'line: {line}')
             if not re.search("[a-zA-Z]", line):
                 if(line.strip()):
                     if "," in line:
@@ -746,3 +748,308 @@ class NPSHDataInput(View):
 
         context = {"status": "success"}
         return JsonResponse(context)
+
+
+class MarketingMapView(TemplateView):
+    """ """
+
+    template_name = "marketingdata/marketingmap.html"
+
+    def get_context_data(self, **kwargs):
+        """
+
+        :param **kwargs: 
+
+        """
+
+        context = {
+            "name": self.request.user.get_full_name(),
+            "title1": "Hydro Dash",
+            "activedropdown": "",
+            "activename": "Family of Curves",
+        }
+        return context
+
+def marketingMapData(request):
+    """
+
+    :param request: 
+
+    """
+    user = request.user
+    flow_units = Profile.objects.filter(user=user).values("flow_units")[0]["flow_units"]
+    head_units = Profile.objects.filter(user=user).values("head_units")[0]["head_units"]
+    power_units = Profile.objects.filter(user=user).values("power_units")[0][
+        "power_units"
+    ]
+
+    flowunitconversionfactor = 1
+    headunitconversionfactor = 1
+    powerunitconversionfactor = 1
+    if flow_units == "Gallons per minute":
+        flowunitconversionfactor = 4.402862
+    elif flow_units == "Liters per second":
+        flowunitconversionfactor = 0.277778
+    if head_units == "Feet":
+        headunitconversionfactor = 3.28084
+    elif flow_units == "Millimeters":
+        headunitconversionfactor = 1000
+    if power_units == "Horsepower":
+        powerunitconversionfactor = 1.34102
+    elif power_units == "Watts":
+        powerunitconversionfactor = 1000
+
+    FI_pumps = [
+        [1206, "D"],
+        [1506, "D"],
+        [2506, "D"],
+        [1207, "D"],
+        [1507, "D"],
+        [2007, "D"],
+        [2507, "D"],
+        [3007, "D"],
+        [4007, "D"],
+        [5007, "D"],
+        [1509, "D"],
+        [2009, "D"],
+        [2509, "D"],
+        [3009, "D"],
+        [4009, "D"],
+        [5009, "D"],
+        [6009, "D"],
+        [2510, "C"],
+        [2511, "D"],
+        [3011, "D"],
+        [5011, "D"],
+        [6011, "D"],
+        [2513, "D"],
+        [3013, "D"],
+        [4013, "D"],
+        [5013, "D"],
+        [6013, "D"],
+        [8013, "D"],
+    ]
+    KV_pumps = [
+        [1506, "D"],
+        [2006, "D"],
+        [3006, "D"],
+        [1507, "D"],
+        [2007, "D"],
+        [3007, "D"],
+        [4007, "D"],
+        [5007, "D"],
+        [6007, "D"],
+        [2009, "D"],
+        [3009, "D"],
+        [4009, "D"],
+        [6009, "D"],
+        [3011, "D"],
+        [4011, "D"],
+        [6011, "D"],
+        [8011, "D"],
+        [3013, "D"],
+        [4013, "D"],
+        [6013, "D"],
+        [8013, "D"],
+    ]
+
+    return_pump_data = {}
+
+    for model, design in FI_pumps:
+        pump_speeds = list(
+            Pump.objects.filter(series="FI", pump_model=model, design_iteration=design)
+            .values_list("speed", flat=True)
+        )
+        # print(f"model:{model}{design} speeds: {pump_speeds}")
+        for speed in pump_speeds:
+            pump_trims = list(PumpTrim.objects.filter(
+                pump__series="FI",
+                pump__pump_model=model,
+                pump__design_iteration=design,
+                pump__speed=speed,
+            ).values_list("trim", flat=True))
+            # print(f"trims:{pump_trims}")
+            max_trim = max(pump_trims)
+            min_trim = min(pump_trims)
+            max_trim_id, max_trim_head_coeffs, max_trim_bep_flow, max_trim_bep_head = PumpTrim.objects.filter(
+                pump__series="FI",
+                pump__pump_model=model,
+                pump__design_iteration=design,
+                pump__speed=speed,
+                trim=max_trim
+            ).values_list(
+                "marketing_data__id",
+                "marketing_data__headcoeffs",
+                "marketing_data__bep_flow",
+                "marketing_data__bep_head",
+            )[
+                0
+            ]
+            min_trim_head_coeffs, = PumpTrim.objects.filter(
+                pump__series="FI",
+                pump__pump_model=model,
+                pump__design_iteration=design,
+                pump__speed=speed,
+                trim=min_trim
+            ).values_list(
+                "marketing_data__headcoeffs",
+            )[0]
+
+            max_trim_bep_flow = max_trim_bep_flow*flowunitconversionfactor
+            max_trim_bep_head = max_trim_bep_head*headunitconversionfactor
+            # print(f"max_trim_id: {max_trim_id}")
+            max_trim_max_flow = min(max(MarketingCurveData.objects.filter(curveid=max_trim_id).values_list("flow", flat=True))*flowunitconversionfactor, 1.6*max_trim_bep_flow)
+            # print(f"max_trim_head_coeffs: {max_trim_head_coeffs}")
+            # print(f"min_trim_head_coeffs: {min_trim_head_coeffs}")
+            max_poly = np.poly1d(max_trim_head_coeffs)
+            min_poly = np.poly1d(min_trim_head_coeffs)
+            max_trim_flow_pts = np.linspace(5, max_trim_max_flow, 30)
+            max_trim_head_pts = max_poly(max_trim_flow_pts)
+            cutoff_curve = np.poly1d(np.polyfit([0, max_trim_max_flow], [0, max_poly(max_trim_max_flow)], 2))
+            # print(f"min_poly: \n{min_poly}\ncutoff_curve: \n{cutoff_curve}")
+            # find roots
+            x_0 = (min_poly - cutoff_curve).roots
+            # print(f"roots:{x_0}")
+            # select roots in specific range only
+            min_trim_max_flow = min(np.real(x_0[(x_0 > 0) & (x_0 < max_trim_max_flow) & np.isreal(x_0)]))
+            # print(f"max_flow:{max_trim_max_flow}")
+            # print(f"root:{min_trim_max_flow}")
+            
+            min_trim_flow_pts = np.linspace(min_trim_max_flow, 5, 30)
+            min_trim_head_pts = min_poly(min_trim_flow_pts)
+
+            plot_flows = np.append(max_trim_flow_pts, min_trim_flow_pts)
+            plot_flows_metric = plot_flows*0.0630902
+            plot_heads = np.append(max_trim_head_pts, min_trim_head_pts)
+            plot_heads_metric = plot_heads*0.3048
+            plot_heads_kpa = plot_heads*2.98898
+            plot_data = np.column_stack((plot_flows, plot_heads))
+            plot_data_metric = np.column_stack((plot_flows_metric, plot_heads_metric))
+            plot_data_kpa = np.column_stack((plot_flows, plot_heads_kpa))
+
+            temp_model = "a"+str(model)
+            if "FI" not in return_pump_data:
+                return_pump_data["FI"] = {}
+            if temp_model not in return_pump_data["FI"]:
+                return_pump_data["FI"][temp_model] = {}
+            if design not in return_pump_data["FI"][temp_model]:
+                return_pump_data["FI"][temp_model][design] = {}
+            if speed not in return_pump_data["FI"][temp_model][design]:
+                return_pump_data["FI"][temp_model][design][speed] = {}
+            
+            # return_pump_data["FI"][temp_model][design][speed]["max_coeffs"] = max_trim_head_coeffs
+            # return_pump_data["FI"][temp_model][design][speed]["min_coeffs"] = min_trim_head_coeffs
+            # return_pump_data["FI"][temp_model][design][speed]["max_flow"] = max_trim_max_flow
+
+            if speed in [1160, 1760, 3500]:
+                return_pump_data["FI"][temp_model][design][speed]["plot_data"] = plot_data.tolist()
+            else:
+                return_pump_data["FI"][temp_model][design][speed]["plot_data_metric"] = plot_data_metric.tolist()
+
+            return_pump_data["FI"][temp_model][design][speed]["plot_data_kpa"] = plot_data_kpa.tolist()
+            return_pump_data["FI"][temp_model][design][speed]["label_location"] = [max_trim_bep_flow, (max_poly(max_trim_max_flow)+max_trim_bep_head*1.5)/2.5]
+    
+    for model, design in KV_pumps:
+        pump_speeds = list(
+            Pump.objects.filter(series="KV", pump_model=model, design_iteration=design)
+            .values_list("speed", flat=True)
+        )
+        # print(f"model:{model}{design} speeds: {pump_speeds}")
+        for speed in pump_speeds:
+            pump_trims = list(PumpTrim.objects.filter(
+                pump__series="KV",
+                pump__pump_model=model,
+                pump__design_iteration=design,
+                pump__speed=speed,
+            ).values_list("trim", flat=True))
+            # print(f"trims:{pump_trims}")
+            max_trim = max(pump_trims)
+            min_trim = min(pump_trims)
+            max_trim_id, max_trim_head_coeffs, max_trim_bep_flow, max_trim_bep_head = PumpTrim.objects.filter(
+                pump__series="KV",
+                pump__pump_model=model,
+                pump__design_iteration=design,
+                pump__speed=speed,
+                trim=max_trim
+            ).values_list(
+                "marketing_data__id",
+                "marketing_data__headcoeffs",
+                "marketing_data__bep_flow",
+                "marketing_data__bep_head",
+            )[
+                0
+            ]
+            min_trim_head_coeffs, = PumpTrim.objects.filter(
+                pump__series="KV",
+                pump__pump_model=model,
+                pump__design_iteration=design,
+                pump__speed=speed,
+                trim=min_trim
+            ).values_list(
+                "marketing_data__headcoeffs",
+            )[0]
+
+            max_trim_bep_flow = max_trim_bep_flow*flowunitconversionfactor
+            max_trim_bep_head = max_trim_bep_head*headunitconversionfactor
+            # print(f"max_trim_id: {max_trim_id}")
+            if str(model)+str(speed) in ["60071160", "60071450", "60071760", "60072900", "60073500"]:
+                max_trim_max_flow = min(max(MarketingCurveData.objects.filter(curveid=max_trim_id).values_list("flow", flat=True))*flowunitconversionfactor, 1.4*max_trim_bep_flow)
+            elif str(model)+str(speed) in ["60111160", "60111450", "60111760", "80111160", "80111450", "80111760", ]:
+                max_trim_max_flow = min(max(MarketingCurveData.objects.filter(curveid=max_trim_id).values_list("flow", flat=True))*flowunitconversionfactor, 1.5*max_trim_bep_flow)
+            else:
+                max_trim_max_flow = min(max(MarketingCurveData.objects.filter(curveid=max_trim_id).values_list("flow", flat=True))*flowunitconversionfactor, 1.6*max_trim_bep_flow)
+
+            # print(f"max_trim_head_coeffs: {max_trim_head_coeffs}")
+            # print(f"min_trim_head_coeffs: {min_trim_head_coeffs}")
+            max_poly = np.poly1d(max_trim_head_coeffs)
+            min_poly = np.poly1d(min_trim_head_coeffs)
+            max_trim_flow_pts = np.linspace(5, max_trim_max_flow, 30)
+            max_trim_head_pts = max_poly(max_trim_flow_pts)
+            cutoff_curve = np.poly1d(np.polyfit([0, max_trim_max_flow], [0, max_poly(max_trim_max_flow)], 2))
+            # print(f"min_poly: \n{min_poly}\ncutoff_curve: \n{cutoff_curve}")
+            # find roots
+            x_0 = (min_poly - cutoff_curve).roots
+            # print(f"roots:{x_0}")
+            # select roots in specific range only
+            min_trim_max_flow = min(np.real(x_0[(x_0 > 0) & (x_0 < max_trim_max_flow) & np.isreal(x_0)]))
+            # print(f"max_flow:{max_trim_max_flow}")
+            # print(f"root:{min_trim_max_flow}")
+            
+            min_trim_flow_pts = np.linspace(min_trim_max_flow, 5, 30)
+            min_trim_head_pts = min_poly(min_trim_flow_pts)
+
+            plot_flows = np.append(max_trim_flow_pts, min_trim_flow_pts)
+            plot_flows_metric = plot_flows*0.0630902
+            plot_heads = np.append(max_trim_head_pts, min_trim_head_pts)
+            plot_heads_metric = plot_heads*0.3048
+            plot_heads_kpa = plot_heads*2.98898
+            plot_data = np.column_stack((plot_flows, plot_heads))
+            plot_data_metric = np.column_stack((plot_flows_metric, plot_heads_metric))
+            plot_data_kpa = np.column_stack((plot_flows, plot_heads_kpa))
+
+            temp_model = "a"+str(model)
+            if "KV" not in return_pump_data:
+                return_pump_data["KV"] = {}
+            if temp_model not in return_pump_data["KV"]:
+                return_pump_data["KV"][temp_model] = {}
+            if design not in return_pump_data["KV"][temp_model]:
+                return_pump_data["KV"][temp_model][design] = {}
+            if speed not in return_pump_data["KV"][temp_model][design]:
+                return_pump_data["KV"][temp_model][design][speed] = {}
+            
+            # return_pump_data["KV"][temp_model][design][speed]["max_coeffs"] = max_trim_head_coeffs
+            # return_pump_data["KV"][temp_model][design][speed]["min_coeffs"] = min_trim_head_coeffs
+            # return_pump_data["KV"][temp_model][design][speed]["max_flow"] = max_trim_max_flow
+
+            if speed in [1160, 1760, 3500]:
+                return_pump_data["KV"][temp_model][design][speed]["plot_data"] = plot_data.tolist()
+            else:
+                return_pump_data["KV"][temp_model][design][speed]["plot_data_metric"] = plot_data_metric.tolist()
+
+            return_pump_data["KV"][temp_model][design][speed]["plot_data_kpa"] = plot_data_kpa.tolist()
+            return_pump_data["KV"][temp_model][design][speed]["label_location"] = [max_trim_bep_flow, (max_poly(max_trim_max_flow)+max_trim_bep_head*1.5)/2.5]
+    # print(return_pump_data)
+    context = {
+        "data": return_pump_data
+    }
+    return JsonResponse(context,safe=False)

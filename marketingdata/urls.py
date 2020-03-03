@@ -12,6 +12,8 @@ from .views import (
     MarketingCurveView,
     marketingCurvePlotData,
     NPSHDataInput,
+    MarketingMapView,
+    marketingMapData
 )
 
 urlpatterns = [
@@ -45,5 +47,15 @@ urlpatterns = [
         "marketingnpshinput",
         login_required(NPSHDataInput.as_view()),
         name="marketingnpshinput",
+    ),
+    path(
+        "marketingmap",
+        login_required(MarketingMapView.as_view()),
+        name="marketingmap",
+    ),
+    path(
+        "marketingmapdata",
+        login_required(marketingMapData),
+        name="marketingmapdata",
     ),
 ]

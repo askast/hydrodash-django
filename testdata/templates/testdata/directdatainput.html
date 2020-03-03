@@ -1,0 +1,223 @@
+{% extends "profiles/stislabase.html" %} 
+{% block extrahead %} 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+{% endblock %} 
+{% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>NPSH Data</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active">
+                    <a href="#">Dashboard</a>
+                </div>
+                <div class="breadcrumb-item">
+                    <a href="#">Reduced Test Data</a>
+                </div>
+                <div class="breadcrumb-item">Test List</div>
+            </div>
+        </div>
+
+        <div class="section-body">
+            <h2 class="section-title">Test Data Input</h2>
+            <p class="section-lead">
+                Paste the data table from Excel below.
+
+            </p>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <form id="npshform">
+                            <div class="card-header">
+                                <h4>Data Input</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Test Name</label>
+                                        <input type="text" id="testname" value="" class="form-control"
+                                            name="testname">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Test Conducted By</label>
+                                        <input type="text" id="testeng" value="N/A" class="form-control"
+                                            name="testeng">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Test Loop</label>
+                                        <select class="form-control" name="testloop">
+                                            <option>Commercial Front Loop</option>
+                                            <option>Commercial Back Loop</option>
+                                            <option>Residential Loop 1</option>
+                                            <option>Residential Loop 2</option>
+                                            <option>Outside Loop</option>
+                                            <option>N/A</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Discharge Pipe Diameter</label>
+                                        <select class="form-control" name="dispipedia" required>
+                                            <option disabled="" selected="" value="">--
+                                                Select an option -- </option>
+                                            <option value=0.62>0.5</option>
+                                            <option value=0.82>0.75</option>
+                                            <option value=1.05>1.0</option>
+                                            <option value=1.38>1.25</option>
+                                            <option value=1.61>1.5</option>
+                                            <option value=2.07>2.0</option>
+                                            <option value=2.47>2.5</option>
+                                            <option value=3.07>3.0</option>
+                                            <option value=3.55>3.5</option>
+                                            <option value=4.03>4.0</option>
+                                            <option value=5.05>5.0</option>
+                                            <option value=6.07>6.0</option>
+                                            <option value=7.98>8.0</option>
+                                            <option value=10.02>10.0</option>
+                                            <option value=11.94>12.0</option>
+                                            <option value=13.13>14.0</option>
+                                            <option value=15>16.0</option>
+                                            <option value=16.66>18.0</option>
+                                            <option value=18.81>20.0</option>
+                                            <option value=22.63>24.0</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Inlet Pipe Diameter</label>
+                                        <select class="form-control" name="inpipedia" required>
+                                            <option disabled="" selected="" value="" >
+                                                -- Select an option -- </option>
+                                            <option value=0.62>0.5</option>
+                                            <option value=0.82>0.75</option>
+                                            <option value=1.05>1.0</option>
+                                            <option value=1.38>1.25</option>
+                                            <option value=1.61>1.5</option>
+                                            <option value=2.07>2.0</option>
+                                            <option value=2.47>2.5</option>
+                                            <option value=3.07>3.0</option>
+                                            <option value=3.55>3.5</option>
+                                            <option value=4.03>4.0</option>
+                                            <option value=5.05>5.0</option>
+                                            <option value=6.07>6.0</option>
+                                            <option value=7.98>8.0</option>
+                                            <option value=10.02>10.0</option>
+                                            <option value=11.94>12.0</option>
+                                            <option value=13.13>14.0</option>
+                                            <option value=15>16.0</option>
+                                            <option value=16.66>18.0</option>
+                                            <option value=18.81>20.0</option>
+                                            <option value=22.63>24.0</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Pump Type</label>
+                                        <select class="form-control" name="pumptype" required>
+                                            <option disabled="" selected="" value=""> -- Select
+                                                an option -- </option>
+                                            <option value="FI">FI</option>
+                                            <option value="CI">CI</option>
+                                            <option value="KV">KV</option>
+                                            <option value="KS">KS</option>
+                                            <option value="TA">TA</option>
+                                            <option value="SKV">SKV</option>
+                                            <option value="SKS">SKS</option>
+                                            <option value="SFI">SFI</option>
+                                            <option value="SCI">SCI</option>
+                                            <option value="ESCC">End suction close-coupled
+                                            </option>
+                                            <option value="ESFM">End suction frame mounted/own
+                                                bearings</option>
+                                            <option value="IL">In-Line</option>
+                                            <option value="RSV">Radially split, multi-stage,
+                                                vertical, in-line casing diffuser</option>
+                                            <option value="ST">Submersible turbine</option>
+                                            <option value="Circ">Residential Circulator</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Impeller Diameter</label>
+                                        <input class="form-control" rows="10"
+                                            name="diameter"></input>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <div class="control-label">Full Trim</div>
+                                        <label class="custom-switch mt-2">
+                                            <input type="checkbox" name="fulltrim"
+                                                class="custom-switch-input" id="fulltrim">
+                                            <span class="custom-switch-indicator"></span>
+                                            <span class="custom-switch-description"> Select if
+                                                impeller diameter used in this test is the full
+                                                trim of this model. PEI calculations apply only
+                                                to full trim tests.</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Bearing Frame</label>
+                                        <select class="form-control" name="bearingframe"
+                                            required>
+                                            <option disabled="" selected="" value=""> -- Select
+                                                an option -- </option>
+                                            <option value="H">H Frame</option>
+                                            <option value="J">J Frame</option>
+                                            <option value="L">L Frame</option>
+                                            <option value="N">N Frame</option>
+                                            <option value="N/A">No Bearing Frame</option>
+                                        </select>
+                                        <small id="bearingHelpBlock"
+                                            class="form-text text-muted">
+                                            This is the bearing frame this test was done with.
+                                            Not what the pump was designed to have.
+                                        </small>
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>Description</label>
+                                        <textarea class="form-control" rows=4 name="description"
+                                            style="height:80%;"></textarea>
+                                    </div>
+                                    <div class="col-12 col-md-12 form-group">
+                                        <label>Paste Raw Test Data. [FLOW, HEAD, H.P., R.P.M., FM\SYST]</label>
+                                        <textarea
+                                            class="form-control"
+                                            rows="10"
+                                            name="testdata"
+                                            style="height:100%;"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary" type="submit" id="loaddatabtn">Load Data</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#npshform').submit(function(e){
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'directdatainput' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: $('#npshform').serialize(),
+                success: function (data) {
+                    if (data.result == "success") {
+                        Swal.fire({
+                            type: 'success',
+                            title: 'Success',
+                            text: 'Test data added to database. '
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock content%}

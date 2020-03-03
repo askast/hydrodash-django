@@ -75,7 +75,7 @@ def calculatePEI(
             C_factor = 128.47
         elif pump_type in ["ESFM", "FI"]:
             C_factor = 128.85
-        elif pump_type in ["IL", "KV", "KS", "TA"]:
+        elif pump_type in ["IL", "KV", "KS", "TA", "1600", "1900"]:
             C_factor = 129.30
         elif pump_type in ["RSV"]:
             C_factor = 129.63
@@ -88,7 +88,7 @@ def calculatePEI(
             C_factor = 130.42
         elif pump_type in ["ESFM", "FI"]:
             C_factor = 130.99
-        elif pump_type in ["IL", "KV", "KS", "TA"]:
+        elif pump_type in ["IL", "KV", "KS", "TA", "1600", "1900"]:
             C_factor = 133.84
         elif pump_type in ["RSV"]:
             C_factor = 133.20
@@ -111,6 +111,8 @@ def calculatePEI(
     specificSpeed = (
         nomspeed * math.pow(bep_flow_corr, 0.5) * math.pow(bep_head_corr, -0.75)
     )
+
+    # print(f'\nbep_flow_corr: {bep_flow_corr}\n specificSpeed: {specificSpeed}\n C_factor: {C_factor}')
 
     hydrobep_power = bep_flow_corr * bep_head_corr / 3956
     hydropower_75 = flow_75_corr * head_75_corr / 3956
@@ -200,7 +202,6 @@ def calculatePEI(
         motorEfficiency = motor_eff
 
     motorLossFull = (motorHP / (motorEfficiency / 100)) - motorHP
-
     STDEff = (
         -0.85 * math.pow(math.log(bep_flow_corr), 2)
         - 0.38 * math.log(specificSpeed) * math.log(bep_flow_corr)

@@ -118,6 +118,11 @@
                                 </thead>
                             </table>
                         </div>
+                        <div class="card-footer">
+                            <a href="#" id="reduce-btn2" class="btn btn-primary"
+                                >Reduce</a
+                            >
+                        </div>
                     </div>
                 </div>
             </div>
@@ -184,12 +189,17 @@
                                 </thead>
                             </table>
                         </div>
+                        <div class="card-footer">
+                            <a href="#" id="reduce-btn5" class="btn btn-primary"
+                                >Reduce</a
+                            >
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    Path: {{ path }}
+    {% comment %} Path: {{ path }} {% endcomment %}
 </div>
 
 <script>
@@ -228,8 +238,11 @@
             stateSave: true,
             ajax: "{% url 'rawtestlist-json' %}?testtype=CE"
         });
-        var table2 = $('#table2').dataTable({
+        var table2 = $('#table2').DataTable({
             autoWidth: false,
+            select: {
+                style: 'multi'
+            },
             order: [[0, 'desc']],
             columnDefs: [
                 {
@@ -252,13 +265,14 @@
                     )
                 }
             ],
+            responsive: true,
             searching: true,
             processing: true,
             serverSide: true,
             stateSave: true,
             ajax: "{% url 'rawtestlist-json' %}?testtype=CP"
         });
-        var table3 = $('#table3').dataTable({
+        var table3 = $('#table3').DataTable({
             autoWidth: false,
             order: [[0, 'desc']],
             columnDefs: [
@@ -288,7 +302,7 @@
             stateSave: true,
             ajax: "{% url 'rawtestlist-json' %}?testtype=RS1"
         });
-        var table4 = $('#table4').dataTable({
+        var table4 = $('#table4').DataTable({
             autoWidth: false,
             order: [[0, 'desc']],
             columnDefs: [
@@ -318,8 +332,11 @@
             stateSave: true,
             ajax: "{% url 'rawtestlist-json' %}?testtype=RS2"
         });
-        var table5 = $('#table5').dataTable({
+        var table5 = $('#table5').DataTable({
             autoWidth: false,
+            select: {
+                style: 'multi'
+            },
             order: [[0, 'desc']],
             columnDefs: [
                 {
@@ -342,6 +359,7 @@
                     )
                 }
             ],
+            responsive: true,
             searching: true,
             processing: true,
             serverSide: true,
@@ -361,6 +379,44 @@
 
         table1.on('dblclick', 'tr', function() {
             var id = table1.row(this).data()[0];
+            console.log(id);
+            window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
+        });
+
+        $('#reduce-btn2').click(function() {
+            var count = table2.rows('.selected').count();
+            var testids = '';
+            for (i = 0; i < count; i++) {
+                console.log(table2.rows('.selected').data()[i][0]);
+                testids += table2.rows('.selected').data()[i][0] + ',';
+            }
+            window.location =
+                "{% url 'testdatareduce' %}?rawtestids=" +
+                testids.slice(0, -1) +
+                '&stand=insideperf';
+        });
+
+        table2.on('dblclick', 'tr', function() {
+            var id = table2.row(this).data()[0];
+            console.log(id);
+            window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
+        });
+
+        $('#reduce-btn5').click(function() {
+            var count = table5.rows('.selected').count();
+            var testids = '';
+            for (i = 0; i < count; i++) {
+                console.log(table5.rows('.selected').data()[i][0]);
+                testids += table5.rows('.selected').data()[i][0] + ',';
+            }
+            window.location =
+                "{% url 'testdatareduce' %}?rawtestids=" +
+                testids.slice(0, -1) +
+                '&stand=outside';
+        });
+
+        table5.on('dblclick', 'tr', function() {
+            var id = table5.row(this).data()[0];
             console.log(id);
             window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
         });

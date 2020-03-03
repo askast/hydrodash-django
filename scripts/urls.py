@@ -7,6 +7,7 @@ from .views import (
     copyKS,
     getPEIupload,
     populatePumps,
+    importOldDashboard
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path("copyks", login_required(copyKS), name="copyks"),
     path("peiupload", login_required(getPEIupload), name="peiupload"),
     path("populate", login_required(populatePumps), name="populate"),
+    path("import", login_required(importOldDashboard), name="import"),
 ]

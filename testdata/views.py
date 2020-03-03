@@ -1,13 +1,15 @@
 import os
 import fnmatch
-from dbfread import DBF
 import json
 from datetime import datetime, timedelta
+import re
+from dbfread import DBF
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 from iapws import IAPWS95
-import re
+import pandas as pd
+from simpledbf import Dbf5
 
 import django_tables2 as tables2
 from django_tables2 import MultiTableMixin
@@ -16,14 +18,14 @@ from django.views.generic.base import TemplateView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.shortcuts import render
 from django.views.generic.base import View
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
+# from django.contrib.auth.decorators import login_required
+# from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
-from profiles.views import home
-from .models import RawTestsList, ReducedPumpTestDetails, ReducedPumpTestData
+# from profiles.views import home
 from profiles.models import Profile
 from pei.utils import calculatePEI
 from pump.models import OldTestDetails
+from .models import RawTestsList, ReducedPumpTestDetails, ReducedPumpTestData
 
 
 class TestListView(TemplateView):
@@ -119,9 +121,9 @@ class RawTestPlotView(MultiTableMixin, TemplateView):
     template_name = "testdata/rawtestplot.html"
     tables = []
 
-    def default(o):
-        if isinstance(o, (datetime.date, datetime.datetime)):
-            return o.isoformat()
+    # def default(o):
+    #     if isinstance(o, (datetime.date, datetime.datetime)):
+    #         return o.isoformat()
 
     def get(self, request, *args, **kwargs):
         testid = request.GET.get('rawtestid', None)
@@ -215,28 +217,21 @@ class TestDataReduce(View):
         testids = []
 
         if request.GET.get('rawtestids', None):
-            for testid in request.GET.get('rawtestids', None).split(','):
-                testids.append(testid)
-                testnames.append(RawTestsList.objects.filter(
-                    id=testid).values("testname")[0]['testname'])
+            if request.GET.get('stand', None) == "outside":
+                for testid in request.GET.get('rawtestids', None).split(','):
+                    testids.append(testid)
+                    testnames.append(RawTestsList.objects.filter(
+                        id=testid).values("testname")[0]['testname'])
 
-                testpath = RawTestsList.objects.filter(
-                    id=testid).values("path")[0]['path']
-                testdata = [dict(f) for f in DBF(testpath, load=True).records]
-                testheaders = list(testdata[0].keys())
-                testheaders = [
-                    header for header in testheaders if "Sts" not in header]
-                dbf_filename = testpath.split('/')[-1]
-                if OldTestDetails.objects.filter(file_name=dbf_filename).count():
-                    oldtestdetailobj = OldTestDetails.objects.filter(file_name=dbf_filename).first()
-                    name = getattr(oldtestdetailobj, 'name')
-                    testeng = getattr(oldtestdetailobj, 'testeng')
-                    teststnd = getattr(oldtestdetailobj, 'teststnd')
-                    inpipedia_in = getattr(oldtestdetailobj, 'inpipedia_in')
-                    outpipedia_in = getattr(oldtestdetailobj, 'outpipedia_in')
-                    description = getattr(oldtestdetailobj, 'description')
-                    pump_type = getattr(oldtestdetailobj, 'pump_type')
-                else:
+                    testpath = RawTestsList.objects.filter(
+                        id=testid).values("path")[0]['path']
+                    testdatadf = Dbf5(testpath).to_dataframe()
+                    print(testdatadf)
+                    # testdatadf = pd.pivot_table(testdatadf, index=["Millitm"], columns=['Tagname'], values=['Value'])
+                    # first_id = testdatadf['Time'].iloc[0]
+                    testdatadf = testdatadf.set_index(['Date', 'Time', 'Tagname'])['Value'].unstack().reset_index()
+                    # print(testdatadf)
+                    testheaders = list(testdatadf)
                     name = ""
                     testeng = ""
                     teststnd = ""
@@ -244,6 +239,39 @@ class TestDataReduce(View):
                     outpipedia_in = ""
                     description = ""
                     pump_type = ""
+                    stand = "outside"
+            else:
+                for testid in request.GET.get('rawtestids', None).split(','):
+                    testids.append(testid)
+                    testnames.append(RawTestsList.objects.filter(
+                        id=testid).values("testname")[0]['testname'])
+
+                    testpath = RawTestsList.objects.filter(
+                        id=testid).values("path")[0]['path']
+                    testdata = [dict(f) for f in DBF(testpath, load=True).records]
+                    testheaders = list(testdata[0].keys())
+                    testheaders = [
+                        header for header in testheaders if "Sts" not in header]
+                    dbf_filename = testpath.split('/')[-1]
+                    if OldTestDetails.objects.filter(file_name=dbf_filename).count():
+                        oldtestdetailobj = OldTestDetails.objects.filter(file_name=dbf_filename).first()
+                        name = getattr(oldtestdetailobj, 'name')
+                        testeng = getattr(oldtestdetailobj, 'testeng')
+                        teststnd = getattr(oldtestdetailobj, 'teststnd')
+                        inpipedia_in = getattr(oldtestdetailobj, 'inpipedia_in')
+                        outpipedia_in = getattr(oldtestdetailobj, 'outpipedia_in')
+                        description = getattr(oldtestdetailobj, 'description')
+                        pump_type = getattr(oldtestdetailobj, 'pump_type')
+                        stand = "inside"
+                    else:
+                        name = ""
+                        testeng = ""
+                        teststnd = ""
+                        inpipedia_in = ""
+                        outpipedia_in = ""
+                        description = ""
+                        pump_type = ""
+                        stand = "inside"
 
         context = {
             "name": request.user.get_full_name(),
@@ -259,7 +287,8 @@ class TestDataReduce(View):
             "inpipe": inpipedia_in,
             "outpipe": outpipedia_in,
             "description": description,
-            "pumptype": pump_type
+            "pumptype": pump_type,
+            "stand": stand
         }
         return render(request, "testdata/testdatareduce.html", context)
 
@@ -278,14 +307,28 @@ def testDataReduceTableData(request):
         tempfield = request.GET.get('tempfield', None)
         tempunits = request.GET.get('tempunits', None)
         rpmfield = request.GET.get('rpmfield', None)
+        stand = request.GET.get('stand', None)
 
         for testid in request.GET.get('rawtestids', None).split(','):
             testpath = RawTestsList.objects.filter(
                 id=testid).values("path")[0]['path']
-            [combined_chartdata.append([dict(f)[flowfield], dict(
-                f)[headfield]]) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
-            [combined_testdata.append({"flow": dict(f)[flowfield], "head":dict(f)[headfield], "power":dict(
-                f)[powerfield], "temp":dict(f)[tempfield], "rpm":dict(f)[rpmfield]}) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
+            if stand == "outside":
+                testdatadf = Dbf5(testpath).to_dataframe()
+                first_id = testdatadf['Time'].iloc[0]
+                testdatadf = testdatadf.set_index(['Date', 'Time', 'Tagname'])['Value'].unstack().reset_index()
+                testdatadf = testdatadf[testdatadf.Time != first_id]
+                [combined_chartdata.append([f[flowfield], f[headfield]]) for index, f in testdatadf.iterrows()]
+                [combined_testdata.append({"flow": f[flowfield], "head":f[headfield], "power":f[powerfield], "temp":f[tempfield], "rpm":f[rpmfield]}) for index, f in testdatadf.iterrows()]
+                print(combined_chartdata)
+                print(combined_testdata)
+            else:
+                [combined_chartdata.append([dict(f)[flowfield], dict(
+                    f)[headfield]]) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
+                [combined_testdata.append({"flow": dict(f)[flowfield], "head":dict(f)[headfield], "power":dict(
+                    f)[powerfield], "temp":dict(f)[tempfield], "rpm":dict(f)[rpmfield]}) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
+                # print(combined_chartdata)
+                # print(combined_testdata)
+            
         combined_chartdata_array = np.array(combined_chartdata)
         X = StandardScaler().fit_transform(combined_chartdata_array)
         # #############################################################################
@@ -299,8 +342,8 @@ def testDataReduceTableData(request):
         for index, label in enumerate(labels):
             combined_testdata[index]["label"] = int(label)
         # Number of clusters in labels, ignoring noise if present.
-        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-        n_noise_ = list(labels).count(-1)
+        # n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+        # n_noise_ = list(labels).count(-1)
 
     context = {
         "chartdata": combined_chartdata_list,
@@ -353,13 +396,18 @@ def reduceTestData(request):
     fulltrim = request.POST.get('fulltrim', None)
     bearingframe = request.POST.get('bearingframe', None)
     source = list(map(int, request.POST.get('source', None).split(",")))
+    stand = request.POST.get('stand', None)
 
     testpath = RawTestsList.objects.filter(
         id=source[0]).values("path")[0]['path']
     record = dict(DBF(testpath, load=True).records[1])
     tempdatetime = str(record['Date'])+" "+record['Time']
-    testdate = datetime.strptime(
-        tempdatetime, "%Y-%m-%d %H:%M:%S.%f") + timedelta(hours=4)
+    if stand == "outside":
+        testdate = datetime.strptime(
+            tempdatetime, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4)
+    else:
+        testdate = datetime.strptime(
+            tempdatetime, "%Y-%m-%d %H:%M:%S.%f") + timedelta(hours=4)
 
     if fulltrim == 'on':
         fulltrim = True
@@ -611,9 +659,9 @@ def reducedTestPlotData(request):
     flow_75 = chart_flow_fit[int(bep_index*0.75)]/flowunitconversionfactor
     head_75 = chart_head_fit[int(bep_index*0.75)]/headunitconversionfactor
     power_75 = chart_power_fit[int(bep_index*0.75)]/powerunitconversionfactor
-    flow_110 = chart_flow_fit[int(bep_index*1.1)]/flowunitconversionfactor
-    head_110 = chart_head_fit[int(bep_index*1.1)]/headunitconversionfactor
-    power_110 = chart_power_fit[int(bep_index*1.1)]/powerunitconversionfactor
+    flow_110 = chart_flow_fit[min([int(bep_index*1.1), len(chart_power_fit)-1])]/flowunitconversionfactor
+    head_110 = chart_head_fit[min([int(bep_index*1.1), len(chart_power_fit)-1])]/headunitconversionfactor
+    power_110 = chart_power_fit[min([int(bep_index*1.1), len(chart_power_fit)-1])]/powerunitconversionfactor
     power_120 = chart_power_fit[min([int(bep_index*1.2), len(chart_power_fit)-1])]/powerunitconversionfactor
     pei_bep_flow = chart_flow_fit[bep_index]/flowunitconversionfactor
     pei_bep_head = chart_head_fit[bep_index]/headunitconversionfactor
@@ -691,5 +739,106 @@ def addSummary(request):
     
     
 
+class DirectDataInputView(View):
+    template_name = "testdata/directdatainput.html"
 
-    
+    def get(self, request, *args, **kwargs):
+        # pumps = list(
+        #     Pump.objects.order_by("series", "pump_model", "design_iteration", "-speed")
+        #     .distinct("series", "pump_model", "design_iteration")
+        #     .values_list("series", "pump_model", "design_iteration", "speed", "id")
+        # )
+        # pumpdata = [
+        #     (pump_id, f"{series}{pumpmodel}{design} {speed}RPM")
+        #     for (series, pumpmodel, design, speed, pump_id) in pumps
+        # ]
+
+        context = {
+            "name": self.request.user.get_full_name(),
+            "title1": "Hydro Dash",
+            "activedropdown": "",
+            "activename": "Direct Data Input",
+            # "pumps": pumpdata,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        testname = request.POST.get('testname', None)
+        testeng = request.POST.get('testeng', None)
+        testloop = request.POST.get('testloop', None)
+        dispipedia = request.POST.get('dispipedia', None)
+        inpipedia = request.POST.get('inpipedia', None)
+        pumptype = request.POST.get('pumptype', None)
+        description = request.POST.get('description', None)
+        testdatatext = request.POST.get('testdata', None)
+        flowunits = "Gallons per minute"
+        headunits = "Feet"
+        powerunits = "Horsepower"
+        tempunits = "Fahrenheit"
+        diameter = float(re.findall(r'[-+]?\d*\.\d+|\d+', request.POST.get('diameter', None))[0])
+        fulltrim = request.POST.get('fulltrim', None)
+        bearingframe = request.POST.get('bearingframe', None)
+        stand = request.POST.get('stand', None)
+
+        if fulltrim == 'on':
+            fulltrim = True
+        else:
+            fulltrim = False
+        
+        testDetailsObj = ReducedPumpTestDetails(testname=testname, testeng=testeng, testloop=testloop, discharge_pipe_dia=dispipedia, inlet_pipe_dia=inpipedia, description=description,
+                                                testdate=datetime.now(), pumptype=pumptype, imp_dia=diameter, fulltrim=fulltrim, bearingframe=bearingframe)
+        testDetailsObj.save()
+
+
+        flowunitconversionfactor = 1
+        headunitconversionfactor = 1
+        powerunitconversionfactor = 1
+        # Database to store values in SI Units with clear water at specific gravity 1.0
+        # Flow - m3/hr
+        # Head - m
+        # Power - KW
+        # Temperature - Kelvin
+
+        if flowunits == "Gallons per minute":
+            flowunitconversionfactor = 0.227125
+        elif flowunits == "Liters per second":
+            flowunitconversionfactor = 3.6
+        if headunits == "Feet":
+            headunitconversionfactor = 0.3048
+        elif flowunits == "Millimeters":
+            headunitconversionfactor = 0.001
+        if powerunits == "Horsepower":
+            powerunitconversionfactor = .7457
+        elif powerunits == "Watts":
+            powerunitconversionfactor = 0.001
+
+
+
+        values = []
+        for line in testdatatext.split('\n'):
+            # print(f'line: {line}')
+            if not re.search("[a-zA-Z]", line):
+                if(line.strip()):
+                    split_line = re.split(' |,|\t', line)
+                    print(f"split_line: {split_line}")
+                    avgTemp = convertTemptoK(float(split_line[4]), tempunits)
+
+                    water_props = IAPWS95(T=avgTemp, x=0)
+                    ref_water_props = IAPWS95(T=277.15, x=0)
+                    specific_gravity = water_props.rho/ref_water_props.rho
+
+                    avgFlow = float(split_line[0])*flowunitconversionfactor
+                    if -.05<=avgFlow<=0:
+                        avgFlow = 0
+                    avgHead = float(split_line[1])*headunitconversionfactor
+                    avgPower = float(split_line[2])*powerunitconversionfactor/specific_gravity
+                    avgRPM = float(split_line[3])
+                    testDataObj = ReducedPumpTestData(
+                        testid=testDetailsObj, flow=avgFlow, head=avgHead, power=avgPower, temp=avgTemp, rpm=avgRPM)
+                    testDataObj.save()
+
+        context = {
+            "result": "success",
+            "testname": testname
+        }
+        return JsonResponse(context)
