@@ -8,6 +8,7 @@ from io import BytesIO
 import base64
 import math
 import numpy as np
+from numpy.polynomial import polynomial as P
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import lines
@@ -25,6 +26,7 @@ from django.conf import settings
 from django.core.files import File
 
 from marketingdata.models import MarketingCurveDetail, MarketingCurveData
+from testdata.models import ReducedPumpTestData, ReducedPumpTestDetails
 from .models import Pump, PumpTrim, NPSHData, SubmittalCurve, OldTestDetails
 
 mpl.rcParams["font.size"] = 12
@@ -565,9 +567,11 @@ def createSubmittalCurves(request):
     )[
         0
     ]
-
+    print(f"inlet dia: {dischargedia} \n type:{type(dischargedia)}")
     if inletdia == 1.38:
         inletdia = 1.25
+    if dischargedia == 1.38:
+        dischargedia = 1.25
 
     inletdia = ("%f" % round_pipe_dia(inletdia)).rstrip("0").rstrip(".")
     dischargedia = ("%f" % round_pipe_dia(dischargedia)).rstrip("0").rstrip(".")
@@ -1267,3 +1271,131 @@ def load_old():
             )
             # creates a tuple of the new object or
             # current object and a boolean of if it was created
+
+class MarketingTestDataCreatorView(TemplateView):
+    template_name = "pump/marketingtestdatacreator.html"
+
+    def get_context_data(self, **kwargs):
+
+        pumps_list = Pump.objects.values(
+            "series",
+            "pump_model",
+            "design_iteration",
+            "speed",
+        )
+
+        nested_trims = {}
+        for m in pumps_list:
+            if m["series"] not in nested_trims:
+                nested_trims[m["series"]] = {}
+            if m["pump_model"] not in nested_trims[m["series"]]:
+                nested_trims[m["series"]][m["pump_model"]] = {}
+            if m["design_iteration"] not in nested_trims[m["series"]][m["pump_model"]]:
+                nested_trims[m["series"]][m["pump_model"]][m["design_iteration"]] = []
+            nested_trims[m["series"]][m["pump_model"]][m["design_iteration"]].append(m["speed"])
+            
+        nested_trims = sortOD(convert(default_to_regular(nested_trims)))
+
+        # print(nested_trims)
+        context = {
+            "name": self.request.user.get_full_name(),
+            "title1": "Hydro Dash",
+            "activedropdown": "",
+            "activename": "Raw Data Creator",
+            "pumpmodels": nested_trims,
+        }
+        return context
+
+def createRawTestData(request):
+    
+    series = request.POST.get("series", None)
+    pumpmodel = request.POST.get("model", None)
+    design = request.POST.get("design", None)
+    rpm = request.POST.get("rpm", None)
+
+    max_trim = max(list(PumpTrim.objects.filter(pump__series=series, pump__pump_model=pumpmodel, pump__design_iteration=design, pump__speed=rpm).values_list("trim", flat=True)))
+    print(f"pump:{series}{pumpmodel}{design} {rpm}rpm")
+    print(f"max trim:{max_trim}")
+    pump_trim = list(PumpTrim.objects.filter(pump__series=series, pump__pump_model=pumpmodel, pump__design_iteration=design, pump__speed=rpm, trim=max_trim).values_list("marketing_data", "engineering_data"))
+    print(f"marketing_data: {pump_trim[0][0]}")
+    print(f"eng_data: {pump_trim[0][1]}")
+    eng_data = list(ReducedPumpTestData.objects.filter(testid__id=pump_trim[0][1]).values_list("flow", "power", "rpm"))
+    marketing_data = list(MarketingCurveData.objects.filter(curveid__id=pump_trim[0][0]).values_list("flow", "power", "head"))
+    eng_flows, eng_powers, eng_rpm = zip(*eng_data)
+    marketing_flows, marketing_powers, marketing_heads = zip(*marketing_data)
+    
+    if 1120 <= eng_rpm[0] <= 1260:
+            nominal_rpm = 1160
+    elif 1400 <= eng_rpm[0] <= 1575:
+        nominal_rpm = 1450
+    elif 1650 <= eng_rpm[0] <= 1890:
+        nominal_rpm = 1760
+    elif 2800 <= eng_rpm[0] <= 3150:
+        nominal_rpm = 2900
+    elif 3400 <= eng_rpm[0] <= 3780:
+        nominal_rpm = 3500
+    else:
+        nominal_rpm = 0
+
+    eng_flows = np.array(eng_flows)/np.array(eng_rpm)*nominal_rpm*4.402862
+    corrected_eng_powers = []
+    for power, rpm in zip(eng_powers, eng_rpm):
+        corrected_eng_powers.append((power*math.pow((nominal_rpm/rpm),3))*1.34102)
+    eng_powers = np.array(corrected_eng_powers)
+    marketing_flows = np.array(marketing_flows)*4.402862
+    marketing_powers = np.array(marketing_powers)*1.34102
+    marketing_heads = np.array(marketing_heads)*3.28084
+
+    eng_power_poly = np.poly1d(np.flip(P.polyfit(eng_flows, eng_powers, 6)))
+    marketing_power_poly = np.poly1d(np.flip(P.polyfit(marketing_flows, marketing_powers, 6)))
+
+    temp_flows = np.linspace(0, max(eng_flows), 30)
+    eng_temp_powers = eng_power_poly(temp_flows)
+    marketing_temp_powers = marketing_power_poly(temp_flows)
+    # print(f"last 2 of series: {series[-2:]}")
+    if pumpmodel[-2:] == "06":
+        modelrandomizer = 1.005
+    elif pumpmodel[-2:] == "07":
+        modelrandomizer = 1.0025
+    elif pumpmodel[-2:] == "09":
+        modelrandomizer = 1.003
+    elif pumpmodel[-2:] == "11":
+        modelrandomizer = 1.002
+    elif pumpmodel[-2:] == "13":
+        modelrandomizer = 1.0035
+    else:
+        modelrandomizer = 1
+
+    if series == "FI":
+        seriesrandomizer = 0.998
+    elif series == "CI":
+        seriesrandomizer = 1.0025
+    elif series == "KV":
+        seriesrandomizer = 1.0015
+    elif series == "KS":
+        seriesrandomizer = 1.0015
+    else:
+        seriesrandomizer = 1
+    
+
+    modelrandomizer = 1
+    seriesrandomizer = 1
+
+    ratio_powers = marketing_temp_powers/eng_temp_powers*modelrandomizer*seriesrandomizer
+
+    adjusted_marketing_powers = marketing_powers*modelrandomizer*seriesrandomizer
+    adjust_power_poly = np.flip(P.polyfit(temp_flows, ratio_powers, 5))
+
+    marketing_data = np.column_stack((marketing_flows, marketing_heads, adjusted_marketing_powers))
+
+    context = {
+        "status" : "success",
+        "powercoeffs" : adjust_power_poly.tolist(),
+        "tempflows" : temp_flows.tolist(),
+        "markpowers" : marketing_temp_powers.tolist(),
+        "engpowers" : eng_temp_powers.tolist(),
+        "marketing_data": marketing_data.tolist(),
+    }
+
+    return JsonResponse(context)
+

@@ -13,7 +13,7 @@ from .views import (
     marketingCurvePlotData,
     NPSHDataInput,
     MarketingMapView,
-    marketingMapData
+    marketingMapData,
 )
 
 urlpatterns = [

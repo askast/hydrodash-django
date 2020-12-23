@@ -172,7 +172,7 @@ def RawTestPlotData(request):
     testheaders = list(testdata[0].keys())
     del_testheaders = [header for header in testheaders if "Sts" in header]
     testheaders = [header for header in testheaders if "Sts" not in header]
-    chart_time = []
+    # chart_time = []
     chart_flow = []
     chart_head = []
     chart_power = []
@@ -215,9 +215,10 @@ class TestDataReduce(View):
     def get(self, request, *args, **kwargs):
         testnames = []
         testids = []
-
+        testloop = request.GET.get('stand', None)
+        
         if request.GET.get('rawtestids', None):
-            if request.GET.get('stand', None) == "outside":
+            if testloop == "outside":
                 for testid in request.GET.get('rawtestids', None).split(','):
                     testids.append(testid)
                     testnames.append(RawTestsList.objects.filter(
@@ -234,12 +235,12 @@ class TestDataReduce(View):
                     testheaders = list(testdatadf)
                     name = ""
                     testeng = ""
-                    teststnd = ""
+                    testloop = "Outside Loop"
                     inpipedia_in = ""
                     outpipedia_in = ""
                     description = ""
                     pump_type = ""
-                    stand = "outside"
+                    dbf_file_type = "outside"
             else:
                 for testid in request.GET.get('rawtestids', None).split(','):
                     testids.append(testid)
@@ -257,21 +258,28 @@ class TestDataReduce(View):
                         oldtestdetailobj = OldTestDetails.objects.filter(file_name=dbf_filename).first()
                         name = getattr(oldtestdetailobj, 'name')
                         testeng = getattr(oldtestdetailobj, 'testeng')
-                        teststnd = getattr(oldtestdetailobj, 'teststnd')
+                        testloop = getattr(oldtestdetailobj, 'teststnd')
                         inpipedia_in = getattr(oldtestdetailobj, 'inpipedia_in')
                         outpipedia_in = getattr(oldtestdetailobj, 'outpipedia_in')
                         description = getattr(oldtestdetailobj, 'description')
                         pump_type = getattr(oldtestdetailobj, 'pump_type')
-                        stand = "inside"
+                        dbf_file_type = "inside"
                     else:
                         name = ""
                         testeng = ""
-                        teststnd = ""
+                        if testloop == "rs1":
+                            testloop = "Residential Loop 1"
+                        elif testloop =="rs2":
+                            testloop = "Residential Loop 2"
+                        elif testloop in ["insideperf", "insideeff"]:
+                            pass
+                        else:
+                            testloop = ""
                         inpipedia_in = ""
                         outpipedia_in = ""
                         description = ""
                         pump_type = ""
-                        stand = "inside"
+                        dbf_file_type = "inside"
 
         context = {
             "name": request.user.get_full_name(),
@@ -283,29 +291,25 @@ class TestDataReduce(View):
             "testheaders": testheaders,
             "oldtestname": name,
             "testeng": testeng,
-            "teststand": teststnd,
+            "testloop": testloop,
             "inpipe": inpipedia_in,
             "outpipe": outpipedia_in,
             "description": description,
             "pumptype": pump_type,
-            "stand": stand
+            "stand": dbf_file_type
         }
         return render(request, "testdata/testdatareduce.html", context)
 
 
-def testDataReduceTableData(request):
+def testDataReducePlotData(request):
     combined_testdata = []
     combined_chartdata = []
 
     if request.GET.get('rawtestids', None):
         flowfield = request.GET.get('flowfield', None)
-        flowunits = request.GET.get('flowunits', None)
         headfield = request.GET.get('headfield', None)
-        headunits = request.GET.get('headunits', None)
         powerfield = request.GET.get('powerfield', None)
-        powerunits = request.GET.get('powerunits', None)
         tempfield = request.GET.get('tempfield', None)
-        tempunits = request.GET.get('tempunits', None)
         rpmfield = request.GET.get('rpmfield', None)
         stand = request.GET.get('stand', None)
 
@@ -324,8 +328,13 @@ def testDataReduceTableData(request):
             else:
                 [combined_chartdata.append([dict(f)[flowfield], dict(
                     f)[headfield]]) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
-                [combined_testdata.append({"flow": dict(f)[flowfield], "head":dict(f)[headfield], "power":dict(
-                    f)[powerfield], "temp":dict(f)[tempfield], "rpm":dict(f)[rpmfield]}) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
+                # print(f"\n\n\n\nrpmfield:{rpmfield}\n\n\n")
+                if rpmfield != "":
+                    [combined_testdata.append({"flow": dict(f)[flowfield], "head":dict(f)[headfield], "power":dict(
+                        f)[powerfield], "temp":dict(f)[tempfield], "rpm":dict(f)[rpmfield]}) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
+                else:
+                    [combined_testdata.append({"flow": dict(f)[flowfield], "head":dict(f)[headfield], "power":dict(
+                        f)[powerfield], "temp":dict(f)[tempfield], "rpm":None}) for index, f in enumerate(DBF(testpath, load=True).records) if index != 0]
                 # print(combined_chartdata)
                 # print(combined_testdata)
             
@@ -459,9 +468,10 @@ def reduceTestData(request):
         for datapoint in testdata_subset:
             sumOfFlows += datapoint['flow']
             sumOfHeads += datapoint['head']
-            sumOfPowers += datapoint['power']
+            sumOfPowers += abs(datapoint['power'])
             sumOfTemps += datapoint['temp']
-            sumOfRPMs += datapoint['rpm']
+            if datapoint['rpm']:
+                sumOfRPMs += datapoint['rpm']
 
         avgTemp = convertTemptoK(sumOfTemps/count, tempunits)
         water_props = IAPWS95(T=avgTemp, x=0)
@@ -569,7 +579,7 @@ def reducedTestPlotData(request):
         flowunitconversionfactor = 0.277778
     if head_units == "Feet":
         headunitconversionfactor = 3.28084
-    elif flow_units == "Millimeters":
+    elif head_units == "Millimeters":
         headunitconversionfactor = 1000
     if power_units == "Horsepower":
         powerunitconversionfactor = 1.34102
@@ -600,11 +610,14 @@ def reducedTestPlotData(request):
         chart_flow.append(float(record['flow']))
         chart_head.append(float(record['head']))
         chart_power.append(float(record['power']))
-        chart_rpm.append(float(record['rpm']))
+        if(record['rpm']):
+            chart_rpm.append(float(record['rpm']))
+        else:
+            chart_rpm.append(None)
     
     
     nominal_rpm = int(request.GET.get('nominalrpm', 0))
-    if nominal_rpm == 0:
+    if nominal_rpm == 0 and chart_rpm[0]:
         if 1120 <= chart_rpm[0] <= 1260:
             nominal_rpm = 1160
         elif 1400 <= chart_rpm[0] <= 1575:
@@ -624,6 +637,7 @@ def reducedTestPlotData(request):
             chart_flow[index] = chart_flow[index]*nominal_rpm/chart_rpm[index]
             chart_head[index] = chart_head[index]*((nominal_rpm/chart_rpm[index])**2)
             chart_power[index] = chart_power[index]*((nominal_rpm/chart_rpm[index])**3)
+            chart_rpm[index] = nominal_rpm
     
     diameter_correction = request.GET.get('diacorrection', None)
     if diameter_correction != 'false':
@@ -631,14 +645,17 @@ def reducedTestPlotData(request):
             chart_head[index] += 6380*(((flow**2)/discharge_diameter**4)-((flow**2)/inlet_diameter**4))
 
     for flow, head, power in zip(chart_flow, chart_head, chart_power):
-        eff = flow*head/(367*power)*100
+        if power > 0:
+            eff = flow*head/(367*power)*100
+        else:
+            eff = 0
         chart_eff.append(eff)
 
     for index, value in enumerate(chart_flow):
         chart_flow[index] = chart_flow[index]*flowunitconversionfactor
         chart_head[index] = chart_head[index]*headunitconversionfactor
         chart_power[index] = chart_power[index]*powerunitconversionfactor
-        table_data.append([chart_flow[index], chart_head[index], chart_eff[index], chart_power[index]])
+        table_data.append([chart_flow[index], chart_head[index], chart_eff[index], chart_power[index], chart_rpm[index]])
 
     head_poly_degree = int(request.GET.get('headdeg', 6))
     power_poly_degree = int(request.GET.get('powdeg', 6))
@@ -648,7 +665,10 @@ def reducedTestPlotData(request):
     chart_flow_fit = np.linspace(min(chart_flow), max(chart_flow), 2000)
     chart_head_fit = list(head_poly(chart_flow_fit))
     chart_power_fit = list(power_poly(chart_flow_fit))
-    chart_eff_fit = list(chart_flow_fit/flowunitconversionfactor*np.array(chart_head_fit)/headunitconversionfactor/(np.array(chart_power_fit)/powerunitconversionfactor*367)*100)
+    if chart_power_fit[0] > 0:
+        chart_eff_fit = list(chart_flow_fit/flowunitconversionfactor*np.array(chart_head_fit)/headunitconversionfactor/(np.array(chart_power_fit)/powerunitconversionfactor*367)*100)
+    else:
+        chart_eff_fit = list(np.zeros(len(chart_power_fit)))
     chart_flow_fit = list(chart_flow_fit)
     bep_eff = max(chart_eff_fit)
     bep_index = chart_eff_fit.index(bep_eff)
@@ -736,8 +756,6 @@ def addSummary(request):
     else:
         testObj.update(bep_flow=bep_flow, bep_head=bep_head, bep_efficiency=bep_eff)
         return JsonResponse({'status': 'success', 'bepflow': round(float(bep_flow), 2), 'bephead':round(float(bep_head), 2), 'bepeff':round(float(bep_eff), 2), 'testname': testname, 'peicl':0, 'peivl':0})
-    
-    
 
 class DirectDataInputView(View):
     template_name = "testdata/directdatainput.html"

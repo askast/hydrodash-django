@@ -49,7 +49,7 @@ def calculatePEI(
     test_type,
     motor_hp=0,
     motor_eff=0,
-):
+    ):
     bep_power = bep_power * 1.34102
     power_75 = power_75 * 1.34102
     power_110 = power_110 * 1.34102
@@ -299,4 +299,111 @@ def calculatePEI(
         "controller_power_bep": controller_input_power_bep,
         "motor_hp": motorHP,
         "motor_eff": motorEfficiency,
+    }
+
+def calculateCirculatorPEI(
+        bep_flow,
+        bep_head,
+        q_25_max,
+        q_50_max,
+        q_75_max,
+        q_100_max,
+        h_25_max,
+        h_50_max,
+        h_75_max,
+        h_100_max,
+        q_25_reduced_test,
+        q_50_reduced_test,
+        q_75_reduced_test,
+        q_100_reduced_test,
+        h_25_reduced_test,
+        h_50_reduced_test,
+        h_75_reduced_test,
+        h_100_reduced_test,
+        p_25_reduced_test,
+        p_50_reduced_test,
+        p_75_reduced_test,
+        p_100_reduced_test,
+    ):
+    weight_25_max = 0.25
+    weight_50_max = 0.25
+    weight_75_max = 0.25
+    weight_100_max = 0.25
+    weight_25_reduced = 0.05
+    weight_50_reduced = 0.4
+    weight_75_reduced = 0.4
+    weight_100_reduced = 0.15
+    alpha_25 = 0.4843
+    alpha_50 = 0.7736
+    alpha_75 = 0.9417
+    alpha_100 = 1.0
+    alpha_25_baseline = 0.4671
+    alpha_50_baseline = 0.7674
+    alpha_75_baseline = 0.9425
+    alpha_100_baseline = 1.0
+
+    q_25_ref = 0.25*bep_flow
+    q_50_ref = 0.50*bep_flow
+    q_75_ref = 0.75*bep_flow
+    
+
+    h_25_ref = (0.8*math.pow(q_25_ref/bep_flow, 2)+0.2)*bep_head
+    h_50_ref = (0.8*math.pow(q_50_ref/bep_flow, 2)+0.2)*bep_head
+    h_75_ref = (0.8*math.pow(q_75_ref/bep_flow, 2)+0.2)*bep_head
+
+
+    p_u_25 = q_25_max*h_25_max/3960
+    p_u_50 = q_50_max*h_50_max/3960
+    p_u_75 = q_75_max*h_75_max/3960
+    p_u_100 = q_100_max*h_100_max/3960
+
+    eta_wtw = 10*math.log(p_u_100+0.001141)+67.78
+
+    p_25_ref = p_u_25/(alpha_25*eta_wtw/100)
+    p_50_ref = p_u_50/(alpha_50*eta_wtw/100)
+    p_75_ref = p_u_75/(alpha_75*eta_wtw/100)
+    p_100_ref = p_u_100/(alpha_100*eta_wtw/100)
+
+    per_circ_ref = weight_25_max*p_25_ref+weight_50_max*p_50_ref+weight_75_max*p_75_ref+weight_100_max*p_100_ref
+
+    if h_25_reduced_test < h_25_ref*1.1:
+        p_25_reduced = (h_25_ref/h_25_reduced_test)*(q_25_ref/q_25_reduced_test)*p_25_reduced_test
+    else:
+        p_25_reduced = p_25_reduced_test
+    
+    if h_50_reduced_test < h_50_ref*1.1:
+        p_50_reduced = (h_50_ref/h_50_reduced_test)*(q_50_ref/q_50_reduced_test)*p_50_reduced_test
+    else:
+        p_50_reduced = p_50_reduced_test
+
+    if h_75_reduced_test < h_75_ref*1.1:
+        p_75_reduced = (h_75_ref/h_75_reduced_test)*(q_75_ref/q_75_reduced_test)*p_75_reduced_test
+    else:
+        p_75_reduced = p_75_reduced_test
+
+    if h_100_reduced_test < bep_head*1.1:
+        p_100_reduced = (bep_head/h_100_reduced_test)*(bep_flow/q_100_reduced_test)*p_100_reduced_test
+    else:
+        p_100_reduced = p_100_reduced_test
+
+    per_circ = weight_25_reduced*p_25_reduced+weight_50_reduced*p_50_reduced+weight_75_reduced*p_75_reduced+weight_100_reduced*p_100_reduced
+
+    pei_circ = per_circ/per_circ_ref
+
+    eta_wtw_baseline = 7.065*math.log(p_u_100+0.003958)+39.08
+    p_25_baseline = p_u_25/(alpha_25_baseline*eta_wtw_baseline/100)
+    p_50_baseline = p_u_50/(alpha_50_baseline*eta_wtw_baseline/100)
+    p_75_baseline = p_u_75/(alpha_75_baseline*eta_wtw_baseline/100)
+    p_100_baseline = p_u_100/(alpha_100_baseline*eta_wtw_baseline/100)
+
+    per_circ_baseline = weight_25_max*p_25_baseline+weight_50_max*p_50_baseline+weight_75_max*p_75_baseline+weight_100_max*p_100_baseline
+
+    pei_circ_baseline = per_circ_baseline/per_circ_ref
+    
+    er_circ = (pei_circ_baseline-pei_circ)*100
+
+    return {
+        "status": "success",
+        "PEI": pei_circ,
+        "ER": er_circ,
     }

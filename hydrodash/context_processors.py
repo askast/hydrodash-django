@@ -24,6 +24,7 @@ def context(request):
                     "url": "/testdata",
                     "icon": "far fa-file-text",
                     "name": "Curve Compare",
+                    "disabled": "true",
                 },
             ],
             "Marketing": [
@@ -47,19 +48,22 @@ def context(request):
                     "icon": "fas fa-chart-area",
                     "name": "Family of Curves",
                 },
+                {
+                    "url": "/pump/marketingtestcreatorview",
+                    "icon": "fas fa-magic",
+                    "name": "Raw Data Creator",
+                }
             ],
             "PEI": [
                 {
-                    "url": "/testdata",
-                    "icon": "fas fa-sidebar",
-                    "name": "PEI Calculator",
-                    "disabled": "true",
+                    "url": "/pei/peiwizard",
+                    "icon": "fas fa-hat-wizard",
+                    "name": "PEI Wizard",
                 },
                 {
-                    "url": "/testdata",
-                    "icon": "fas fa-sidebar",
-                    "name": "ER Calculator",
-                    "disabled": "true",
+                    "url": "/pei/peicalculator",
+                    "icon": "fas fa-calculator",
+                    "name": "PEI Calculator",
                 },
             ],
         }

@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "hydrodashenv/bin/python3.6"
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
 }

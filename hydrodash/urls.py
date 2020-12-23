@@ -10,6 +10,7 @@ urlpatterns = [
     path("marketingdata/", include("marketingdata.urls")),
     path("pump/", include("pump.urls")),
     path("scripts/", include("scripts.urls")),
+    path("pei/", include("pei.urls")),
 ]
 
 if settings.DEBUG:

@@ -145,6 +145,11 @@
                                 </thead>
                             </table>
                         </div>
+                        <div class="card-footer">
+                            <a href="#" id="reduce-btn3" class="btn btn-primary"
+                                >Reduce</a
+                            >
+                        </div>
                     </div>
                 </div>
             </div>
@@ -166,6 +171,11 @@
                                     <th>Data Reduced</th>
                                 </thead>
                             </table>
+                        </div>
+                        <div class="card-footer">
+                            <a href="#" id="reduce-btn4" class="btn btn-primary"
+                                >Reduce</a
+                            >
                         </div>
                     </div>
                 </div>
@@ -274,6 +284,9 @@
         });
         var table3 = $('#table3').DataTable({
             autoWidth: false,
+            select: {
+                style: 'multi'
+            },
             order: [[0, 'desc']],
             columnDefs: [
                 {
@@ -304,6 +317,9 @@
         });
         var table4 = $('#table4').DataTable({
             autoWidth: false,
+            select: {
+                style: 'multi'
+            },
             order: [[0, 'desc']],
             columnDefs: [
                 {
@@ -374,7 +390,8 @@
                 testids += table1.rows('.selected').data()[i][0] + ',';
             }
             window.location =
-                "{% url 'testdatareduce' %}?rawtestids=" + testids.slice(0, -1);
+                "{% url 'testdatareduce' %}?rawtestids=" + testids.slice(0, -1)+
+                '&stand=insideeff';
         });
 
         table1.on('dblclick', 'tr', function() {
@@ -398,6 +415,44 @@
 
         table2.on('dblclick', 'tr', function() {
             var id = table2.row(this).data()[0];
+            console.log(id);
+            window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
+        });
+
+        $('#reduce-btn3').click(function() {
+            var count = table3.rows('.selected').count();
+            var testids = '';
+            for (i = 0; i < count; i++) {
+                console.log(table3.rows('.selected').data()[i][0]);
+                testids += table3.rows('.selected').data()[i][0] + ',';
+            }
+            window.location =
+                "{% url 'testdatareduce' %}?rawtestids=" +
+                testids.slice(0, -1) +
+                '&stand=rs1';
+        });
+
+        table3.on('dblclick', 'tr', function() {
+            var id = table3.row(this).data()[0];
+            console.log(id);
+            window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
+        });
+
+        $('#reduce-btn4').click(function() {
+            var count = table4.rows('.selected').count();
+            var testids = '';
+            for (i = 0; i < count; i++) {
+                console.log(table4.rows('.selected').data()[i][0]);
+                testids += table4.rows('.selected').data()[i][0] + ',';
+            }
+            window.location =
+                "{% url 'testdatareduce' %}?rawtestids=" +
+                testids.slice(0, -1) +
+                '&stand=rs2';
+        });
+
+        table4.on('dblclick', 'tr', function() {
+            var id = table4.row(this).data()[0];
             console.log(id);
             window.location = "{% url 'rawtestplotview' %}?rawtestid=" + id;
         });

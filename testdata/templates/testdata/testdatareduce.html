@@ -85,8 +85,11 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                        {% if choice == 'FM\\FLOW' %}selected{% endif %}
-                                                                        {% if choice == 'CTS2\\FLOW_AVERAGE' %}selected{% endif %}>
+                                                                        {% if choice == 'FM\\FLOW' and testloop == 'insideeff' %}selected{% endif %}
+                                                                        {% if choice == 'FM\\FLOW' and testloop == 'insideperf' %}selected{% endif %}
+                                                                        {% if choice == 'S1\\FLOW' and testloop == 'Residential Loop 1' %}selected{% endif %}
+                                                                        {% if choice == 'S2\\FLOW' and testloop == 'Residential Loop 2' %}selected{% endif %}
+                                                                        {% if choice == 'CTS2\\FLOW_AVERAGE' and testloop == 'Outside Loop' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -108,8 +111,11 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                    {% if choice == 'FM\\HEAD' %}selected{% endif %}
-                                                                    {% if choice == 'CTS2\\HEAD_AVERAGE' %}selected{% endif %}>
+                                                                        {% if choice == 'FM\\HEAD' and testloop == 'insideeff' %}selected{% endif %}
+                                                                        {% if choice == 'FM\\HEAD' and testloop == 'insideperf' %}selected{% endif %}
+                                                                        {% if choice == 'S1\\HEAD' and testloop == 'Residential Loop 1' %}selected{% endif %}
+                                                                        {% if choice == 'S2\\HEAD' and testloop == 'Residential Loop 2' %}selected{% endif %}
+                                                                        {% if choice == 'CTS2\\HEAD_AVERAGE' and testloop == 'Outside Loop' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -131,8 +137,11 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                    {% if choice == 'FM\\HP' %}selected{% endif %}
-                                                                    {% if choice == 'CTS2\\HP_AVERAGE' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\HP' and testloop == 'insideeff' %}selected{% endif %}
+                                                                    {% if choice == 'FM\\POWER' and testloop == 'insideperf' %}selected{% endif %}
+                                                                    {% if choice == 'S1\\WATTS' and testloop == 'Residential Loop 1' %}selected{% endif %}
+                                                                    {% if choice == 'S2\\WATTS' and testloop == 'Residential Loop 2' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\HP_AVERAGE' and testloop == 'Outside Loop' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -141,9 +150,9 @@
                                                                 <label>Power/HP Units</label>
                                                                 <select class="form-control" id="powerunits"
                                                                     name="powerunits">
-                                                                    <option>Horsepower</option>
-                                                                    <option>Kilowatts</option>
-                                                                    <option>Watts</option>
+                                                                    <option {% if testloop == 'insideeff' or testloop == 'Outside Loop' %}selected{% endif %}>Horsepower</option>
+                                                                    <option {% if testloop == 'insideperf' %}selected{% endif %}>Kilowatts</option>
+                                                                    <option {% if testloop == 'Residential Loop 1' or testloop == 'Residential Loop 2' %}selected{% endif %}>Watts</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
@@ -154,8 +163,11 @@
                                                                         an option -- </option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                    {% if choice == 'FM\\SYST' %}selected{% endif %}
-                                                                    {% if choice == 'CTS2\\TEMP_AVERAGE' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\SYST' and testloop == 'insideeff' %}selected{% endif %}
+                                                                    {% if choice == 'FM\\SYST' and testloop == 'insideperf' %}selected{% endif %}
+                                                                    {% if choice == 'S1\\SYST' and testloop == 'Residential Loop 1' %}selected{% endif %}
+                                                                    {% if choice == 'S2\\SYST' and testloop == 'Residential Loop 2' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\TEMP_AVERAGE' and testloop == 'Outside Loop' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -164,7 +176,7 @@
                                                                 <label>Temperature Units</label>
                                                                 <select class="form-control" id="tempunits"
                                                                     name="tempunits">
-                                                                    <option>Fahrenheit</option>
+                                                                    <option selected>Fahrenheit</option>
                                                                     <option>Celsius</option>
                                                                     <option>Kelvin</option>
                                                                     <option>Rankine</option>
@@ -179,8 +191,10 @@
                                                                     <option>None</option>
                                                                     {% for choice in testheaders %}
                                                                     <option
-                                                                    {% if choice == 'FM\\RPM' %}selected{% endif %}
-                                                                    {% if choice == 'CTS2\\RPM_READING' %}selected{% endif %}>
+                                                                    {% if choice == 'FM\\RPM' and testloop == 'insideeff' %}selected{% endif %}
+                                                                    {% if choice == 'FM\\RPM' and testloop == 'insideperf' %}selected{% endif %}
+                                                                    {% if choice == 'L4\\RPM' and testloop == 'Residential Loop 2' %}selected{% endif %}
+                                                                    {% if choice == 'CTS2\\RPM_READING' and testloop == 'Outside Loop' %}selected{% endif %}>
                                                                         {{ choice }}</option>
                                                                     {% endfor %}
                                                                 </select>
@@ -240,7 +254,7 @@
                                                                     <option {% if testloop == "Commercial Back Loop" %}selected{% endif %}>Commercial Back Loop</option>
                                                                     <option {% if testloop == "Residential Loop 1" %}selected{% endif %}>Residential Loop 1</option>
                                                                     <option {% if testloop == "Residential Loop 2" %}selected{% endif %}>Residential Loop 2</option>
-                                                                    <option>Outside Loop</option>
+                                                                    <option {% if testloop == "Outside Loop" %}selected{% endif %}>Outside Loop</option>
                                                                 </select>
                                                             </div>
                                                             <div class="col-12 col-md-6 form-group">
@@ -626,9 +640,8 @@
             var rpmfield = $("#rpmfield").children("option:selected").val();
             $.getJSON(
                 "{% url 'datareducetabledata' %}?rawtestids=" + rawtestidsstring + "&flowfield=" +
-                flowfield + "&flowunits=" + flowunits + "&headfield=" + headfield + "&headunits=" +
-                headunits + "&powerfield=" + powerfield + "&powerunits=" + powerunits +
-                "&tempfield=" + tempfield + "&tempunits=" + tempunits + "&rpmfield=" + rpmfield + "&stand=" + teststand,
+                flowfield + "&headfield=" + headfield + "&powerfield=" + powerfield + 
+                "&tempfield=" + tempfield + "&rpmfield=" + rpmfield + "&stand=" + teststand,
                 function (data) {
                     chart1data = [];
                     testdata = data.testdata;

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "testdata.apps.TestdataConfig",
     "marketingdata.apps.MarketingdataConfig",
     "pump.apps.PumpConfig",
+    "pei.apps.PeiConfig",
     "widget_tweaks",
     "django_tables2",
     "django.contrib.admin",

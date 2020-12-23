@@ -117,7 +117,7 @@ class ReducedPumpTestData(models.Model):
     head = models.FloatField()
     power = models.FloatField()
     temp = models.FloatField()
-    rpm = models.FloatField()
+    rpm = models.FloatField(null=True)
 
     def __str__(self):
         return f"{self.testid.id} {self.testid.testname} flow:{self.flow*4.402862} head:{self.head*3.28084}"

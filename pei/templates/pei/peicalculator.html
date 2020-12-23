@@ -1,0 +1,159 @@
+{% extends "profiles/stislabase.html" %}
+{% load static %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>PEI Calculator</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+                <div class="breadcrumb-item"><a href="#">PEI Calculator</a></div>
+            </div>
+        </div>
+
+        <div class="section-body">
+            <h2 class="section-title">Circulator PEI Data Input</h2>
+            <p class="section-lead">
+                Enter values below
+            </p>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <form id="peiform">
+                            <div class="card-header">
+                                <h4>Data Input</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>bep_flow</label>
+                                        <input class="form-control" value="" name="bep_flow" id="bep_flow">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>bep_head</label>
+                                        <input class="form-control" value="" name="bep_head" id="bep_head">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_25_max</label>
+                                            <input class="form-control" value="" name="q_25_max" id="q_25_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_50_max</label>
+                                        <input class="form-control" value="" name="q_50_max" id="q_50_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_75_max</label>
+                                        <input class="form-control" value="" name="q_75_max" id="q_75_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_100_max</label>
+                                        <input class="form-control" value="" name="q_100_max" id="q_100_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_25_max</label>
+                                        <input class="form-control" value="" name="h_25_max" id="h_25_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_50_max</label>
+                                        <input class="form-control" value="" name="h_50_max" id="h_50_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_75_max</label>
+                                        <input class="form-control" value="" name="h_75_max" id="h_75_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_100_max</label>
+                                            <input class="form-control" value="" name="h_100_max" id="h_100_max">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_25_reduced_test</label>
+                                        <input class="form-control" value="" name="q_25_reduced_test" id="q_25_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_50_reduced_test</label>
+                                        <input class="form-control" value="" name="q_50_reduced_test" id="q_50_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_75_reduced_test</label>
+                                        <input class="form-control" value="" name="q_75_reduced_test" id="q_75_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>q_100_reduced_test</label>
+                                        <input class="form-control" value="" name="q_100_reduced_test" id="q_100_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_25_reduced_test</label>
+                                        <input class="form-control" value="" name="h_25_reduced_test" id="h_25_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_50_reduced_test</label>
+                                        <input class="form-control" value="" name="h_50_reduced_test" id="h_50_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_75_reduced_test</label>
+                                        <input class="form-control" value="" name="h_75_reduced_test" id="h_75_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>h_100_reduced_test</label>
+                                        <input class="form-control" value="" name="h_100_reduced_test" id="h_100_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>p_25_reduced_test</label>
+                                        <input class="form-control" value="" name="p_25_reduced_test" id="p_25_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>p_50_reduced_test</label>
+                                        <input class="form-control" value="" name="p_50_reduced_test" id="p_50_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>p_75_reduced_test</label>
+                                        <input class="form-control" value="" name="p_75_reduced_test" id="p_75_reduced_test">
+                                    </div>
+                                    <div class="col-12 col-md-6 form-group">
+                                        <label>p_100_reduced_test</label>
+                                        <input class="form-control" value="" name="p_100_reduced_test" id="p_100_reduced_test">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary" type="submit" id="submitbtn">Calculate</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#peiform').submit(function(e){
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'getcircpei' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: $('#peiform').serialize(),
+                success: function (data) {
+                    if (data.status == "success") {
+                        lines = ['PEI: '+data.pei,'ER: '+data.er]
+                        Swal.fire('Success', lines.join('<br>'), 'success');
+                    }
+                }
+            });
+        });
+        
+
+    });
+</script>
+{% endblock content%}
