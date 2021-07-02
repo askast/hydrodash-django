@@ -535,7 +535,85 @@ def getPEIupload(request):
         # ["KV", "3011", "A", [1760], 11.25],
         # ["KV", "4013", "A", [1760], 13.0],
         # ["KV", "8013", "A", [1760], 13.0],
-        ["FI", "2507", "A", [1760], 7.5],
+        ["FI", "1207", "D", [1160], 7.25],
+        ["FI", "1507", "D", [1160], 7.25],
+        ["FI", "2007", "D", [1160], 7.25],
+        ["FI", "2507", "D", [1160], 7.25],
+        ["FI", "3007", "D", [1160], 7.25],
+        ["FI", "4007", "D", [1160], 7.25],
+        ["FI", "5007", "D", [1160], 7.25],
+        ["FI", "1509", "D", [1160], 9.5],
+        ["FI", "2009", "D", [1160], 9.5],
+        ["FI", "2509", "D", [1160], 9.5],
+        ["FI", "3009", "D", [1160], 9.5],
+        ["FI", "4009", "D", [1160], 9.5],
+        ["FI", "5009", "D", [1160], 9.5],
+        ["FI", "6009", "D", [1160], 9.5],
+        ["FI", "2511", "D", [1160], 11.0],
+        ["FI", "3011", "D", [1160], 11.0],
+        ["FI", "5011", "D", [1160], 11.0],
+        ["FI", "6011", "D", [1160], 11.0],
+        ["FI", "2513", "D", [1160], 13.5],
+        ["FI", "3013", "D", [1160], 13.5],
+        ["FI", "4013", "D", [1160], 13.5],
+        ["FI", "5013", "D", [1160], 13.5],
+        ["FI", "6013", "D", [1160], 13.5],
+        ["FI", "8013", "D", [1160], 13.5],
+        ["CI", "1207", "D", [1160], 7.25],
+        ["CI", "1507", "D", [1160], 7.25],
+        ["CI", "2007", "D", [1160], 7.25],
+        ["CI", "2507", "D", [1160], 7.25],
+        ["CI", "3007", "D", [1160], 7.25],
+        ["CI", "4007", "D", [1160], 7.25],
+        ["CI", "5007", "D", [1160], 7.25],
+        ["CI", "1509", "D", [1160], 9.5],
+        ["CI", "2009", "D", [1160], 9.5],
+        ["CI", "2509", "D", [1160], 9.5],
+        ["CI", "3009", "D", [1160], 9.5],
+        ["CI", "4009", "D", [1160], 9.5],
+        ["CI", "5009", "D", [1160], 9.5],
+        ["CI", "6009", "D", [1160], 9.5],
+        ["CI", "2511", "D", [1160], 11.0],
+        ["CI", "3011", "D", [1160], 11.0],
+        ["CI", "5011", "D", [1160], 11.0],
+        ["CI", "6011", "D", [1160], 11.0],
+        ["CI", "2513", "D", [1160], 13.5],
+        ["CI", "3013", "D", [1160], 13.5],
+        ["CI", "4013", "D", [1160], 13.5],
+        ["KV", "6007", "D", [1160], 7.25],
+        ["KV", "3009", "D", [1160], 9.5],
+        ["KV", "3011", "D", [1160], 11.0],
+        ["KV", "3013", "D", [1160], 13.5],
+        ["KV", "4009", "D", [1160], 9.5],
+        ["KV", "4011", "D", [1160], 11.0],
+        ["KV", "4013", "D", [1160], 13.5],
+        ["KV", "6007", "D", [1160], 7.25],
+        ["KV", "6011", "D", [1160], 11.0],
+        ["KV", "6013", "D", [1160], 13.5],
+        ["KV", "8011", "D", [1160], 11.0],
+        ["KV", "8013", "D", [1160], 13.5],
+        ["KV", "1509", "C", [1160], 9.5],
+        ["KV", "2011", "C", [1160], 11.25],
+        ["KS", "3009", "D", [1160], 9.5],
+        ["KS", "3011", "D", [1160], 11.0],
+        ["KS", "3013", "D", [1160], 13.5],
+        ["KS", "4009", "D", [1160], 9.5],
+        ["KS", "4011", "D", [1160], 11.0],
+        ["KS", "4013", "D", [1160], 13.5],
+        ["KS", "6007", "D", [1160], 7.25],
+        ["KS", "6011", "D", [1160], 11.0],
+        ["KS", "6013", "D", [1160], 13.5],
+        ["KS", "8011", "D", [1160], 11.0],
+        ["KS", "8013", "D", [1160], 13.5],
+        ["KS", "1509", "C", [1160], 9.5],
+        ["KS", "2011", "C", [1160], 11.25],
+        # ["KS", "8016", "C", [1160], 16.5],
+        # ["KS", "1013", "C", [1160], 13.0],
+        # ["1600", "1611", "C", [1160], 4.75],
+        # ["1600", "1615", "C", [1160], 6.35],
+        # ["1600", "1619", "C", [1160], 7.9],
+        # ["1600", "1635", "C", [1160], 6.15],
+        # ["1600", "1641", "C", [1160], 7.9],
     ]
     return_string = ""
     for series, model, d, speeds, trim in pump_str:
@@ -564,6 +642,7 @@ def getPEIupload(request):
                 .values_list("power", flat=True)
             )
             bep_flow = getattr(pump_trim_obj.marketing_data, "bep_flow")
+            flow_50 = 0.5 * bep_flow
             flow_75 = 0.75 * bep_flow
             flow_110 = 1.1 * bep_flow
             flow_120 = 1.2 * bep_flow
@@ -571,14 +650,26 @@ def getPEIupload(request):
             headpoly = np.poly1d(np.polyfit(flows, heads, 6))
             powerpoly = np.poly1d(np.polyfit(flows, powers, 6))
 
-            bep_head = headpoly(bep_flow)
-            head_75 = headpoly(flow_75)
-            head_110 = headpoly(flow_110)
+            bep_head = headpoly(bep_flow)*3.28084
+            head_50 = headpoly(flow_50)*3.28084
+            head_75 = headpoly(flow_75)*3.28084
+            head_110 = headpoly(flow_110)*3.28084
 
-            bep_power = powerpoly(bep_flow)
-            power_75 = powerpoly(flow_75)
-            power_110 = powerpoly(flow_110)
-            power_120 = powerpoly(flow_120)
+            bep_power = powerpoly(bep_flow)*1.34102
+            power_50 = powerpoly(flow_50)*1.34102
+            power_75 = powerpoly(flow_75)*1.34102
+            power_110 = powerpoly(flow_110)*1.34102
+            power_120 = powerpoly(flow_120)*1.34102
+
+            flow_50 = flow_50*4.402862
+            flow_75 = flow_75*4.402862
+            flow_110 = flow_110*4.402862
+            flow_120 =  flow_120*4.402862
+
+            bep_eff = bep_flow*bep_head/(bep_power*3960)*100
+            eff_50 = flow_50*head_50/(power_50*3960)*100
+            eff_75 = flow_75*head_75/(power_75*3960)*100
+            eff_110 = flow_110*head_110/(power_110*3960)*100
 
             if series == "FI":
                 category = "ESCC"
@@ -592,39 +683,46 @@ def getPEIupload(request):
                 modelnumber = f"{series}{model}{design_iteration}-4P-PM"
                 varspeedmodelnumber_1 = f"S{series}{model}{design_iteration}D-4P-PD"
                 varspeedmodelnumber_2 = f"S{series}{model}{design_iteration}4-4P-PD"
-            else:
+            elif speed == 3500:
                 nomspeed = 3600
                 modelnumber = f"{series}{model}{design_iteration}-2P-PM"
                 varspeedmodelnumber_1 = f"S{series}{model}{design_iteration}F-2P-PD"
                 varspeedmodelnumber_2 = f"S{series}{model}{design_iteration}6-2P-PD"
+            elif speed == 1160:
+                nomspeed = 1200
+                modelnumber = f"{series}{model}{design_iteration}-6P-PM"
+                varspeedmodelnumber_1 = f"S{series}{model}{design_iteration}F-6P-PD"
+                varspeedmodelnumber_2 = f"S{series}{model}{design_iteration}6-6P-PD"
 
-            pei = calculatePEI(
-                bep_flow,
-                bep_head,
-                bep_power,
-                flow_75,
-                head_75,
-                power_75,
-                flow_110,
-                head_110,
-                power_110,
-                power_120,
-                speed,
-                category,
-                "BP"
-            )
-            pump_trim_obj.marketing_data.__dict__.update(peicl=pei['PEIcl'])
-            pump_trim_obj.marketing_data.__dict__.update(peivl=pei['PEIvl'])
-            pump_trim_obj.marketing_data.save()
+            # pei = calculatePEI(
+            #     bep_flow,
+            #     bep_head,
+            #     bep_power,
+            #     flow_75,
+            #     head_75,
+            #     power_75,
+            #     flow_110,
+            #     head_110,
+            #     power_110,
+            #     power_120,
+            #     speed,
+            #     category,
+            #     "BP"
+            # )
+            # pump_trim_obj.marketing_data.__dict__.update(peicl=pei['PEIcl'])
+            # pump_trim_obj.marketing_data.__dict__.update(peivl=pei['PEIvl'])
+            # pump_trim_obj.marketing_data.save()
             """
             return {
                 "status": "success",
                 "PEIcl": PEIcl,
                 "PEIvl": PEIvl,
                 "flow_bep": bep_flow_corr,
+                "head_50": head_50_corr,
                 "head_75": head_75_corr,
                 "head_bep": bep_head_corr,
                 "head_110": head_110_corr,
+                "power_50": power_50_corr,
                 "power_75": power_75_corr,
                 "power_bep": bep_power_corr,
                 "power_110": power_110_corr,
@@ -638,8 +736,9 @@ def getPEIupload(request):
             """
 
             # return_string += f"Taco, Taco, {series}{model}, {modelnumber}, {category}, Bare pump + motor, {trim}, 5, 1, {nomspeed}, , yes, {pei['motor_eff']}, {pei['motor_hp']}, yes, {pei['flow_bep']}, {pei['flow_bep']*0.75}, {pei['flow_bep']*1.1}, , , {pei['head_bep']}, , , , , {pei['power_bep']}, {pei['power_75']}, {pei['power_110']}, , , , , , , {pei['PEIcl']}, {pei['head_75']}, {pei['head_110']}, , , 109,\n"
-            return_string += f"Taco, Taco, S{series}{model}, {varspeedmodelnumber_1}, {category}, Bare pump + motor + continuous control, {trim}, 7, 1, {nomspeed}, , yes, {pei['motor_eff']}, {pei['motor_hp']}, yes, {pei['flow_bep']}, {pei['flow_bep']*0.75}, {pei['flow_bep']*1.1}, , , {pei['head_bep']}, , , , , , , , , , {pei['controller_power_25']}, {pei['controller_power_50']}, {pei['controller_power_75']}, {pei['controller_power_bep']}, {pei['PEIvl']}, {pei['head_75']}, {pei['head_110']}, , , 109,\n"
-            return_string += f"Taco, Taco, S{series}{model}, {varspeedmodelnumber_2}, {category}, Bare pump + motor + continuous control, {trim}, 7, 1, {nomspeed}, , yes, {pei['motor_eff']}, {pei['motor_hp']}, yes, {pei['flow_bep']}, {pei['flow_bep']*0.75}, {pei['flow_bep']*1.1}, , , {pei['head_bep']}, , , , , , , , , , {pei['controller_power_25']}, {pei['controller_power_50']}, {pei['controller_power_75']}, {pei['controller_power_bep']}, {pei['PEIvl']}, {pei['head_75']}, {pei['head_110']}, , , 109,\n"
+            # return_string += f"Taco, Taco, S{series}{model}, {varspeedmodelnumber_1}, {category}, Bare pump + motor + continuous control, {trim}, 7, 1, {nomspeed}, , yes, {pei['motor_eff']}, {pei['motor_hp']}, yes, {pei['flow_bep']}, {pei['flow_bep']*0.75}, {pei['flow_bep']*1.1}, , , {pei['head_bep']}, , , , , , , , , , {pei['controller_power_25']}, {pei['controller_power_50']}, {pei['controller_power_75']}, {pei['controller_power_bep']}, {pei['PEIvl']}, {pei['head_75']}, {pei['head_110']}, , , 109,\n"
+            # return_string += f"Taco, Taco, S{series}{model}, {varspeedmodelnumber_2}, {category}, Bare pump + motor + continuous control, {trim}, 7, 1, {nomspeed}, , yes, {pei['motor_eff']}, {pei['motor_hp']}, yes, {pei['flow_bep']}, {pei['flow_bep']*0.75}, {pei['flow_bep']*1.1}, , , {pei['head_bep']}, , , , , , , , , , {pei['controller_power_25']}, {pei['controller_power_50']}, {pei['controller_power_75']}, {pei['controller_power_bep']}, {pei['PEIvl']}, {pei['head_75']}, {pei['head_110']}, , , 109,\n"
+            return_string += f"{series}{model}, {nomspeed}, {flow_50}, {head_50}, {eff_50}, {flow_75}, {head_75}, {eff_75}, {bep_flow}, {bep_head}, {bep_eff}, {flow_110}, {head_110}, {eff_110},\n"
 
     return HttpResponse(return_string, content_type="text/plain")
 
@@ -973,3 +1072,4 @@ def importOldDashboard(request):
     #     pump_type = getattr(oldtestdetailobj, 'pump_type')
     #     stand = "inside"
     return HttpResponse("DID IT")
+

@@ -542,7 +542,7 @@
                 targets: [0, 1, 2, 3],
                 className: "text-center",
                 render: function (data) {
-                    return parseFloat(data).toFixed(2);
+                    return parseFloat(data).toPrecision(5);
                 }
             }],
             responsive: true,

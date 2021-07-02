@@ -110,6 +110,32 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="row mt-4">
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>HI Upload Speadsheet Input</h4>
+                                                </div>
+                                                <div class="card-body" id="upload_text">
+                                                </div>
+                                                <div class="card-footer text-right">
+                                                    <button class="btn btn-primary" id='upload_btn'>Copy</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>HI Calculator Speadsheet Input</h4>
+                                                </div>
+                                                <div class="card-body" id="calc_text">
+                                                </div>
+                                                <div class="card-footer text-right">
+                                                    <button class="btn btn-primary" id='calc_btn'>Copy</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -121,8 +147,28 @@
 </div>
 
 <script>
+    var upload_copy_text = "";
+    var calc_copy_text = "";
+    function copyToClipboard(text) {
+        var $temp = $("<input>");
+        $("body").append($temp);
+        $temp.val(text).select();
+        document.execCommand("copy");
+        $temp.remove();
+    }
     $(document).ready(function () {
-       
+        $("#calc_btn").click(
+            function(event) {
+                event.preventDefault();
+                copyToClipboard(calc_copy_text);
+            }
+        );
+        $("#upload_btn").click(
+            function(event) {
+                event.preventDefault();
+                copyToClipboard(upload_copy_text);
+            }
+        );
         var basechartoptions = {
             chart: {
                 zoomType: 'xy'
@@ -201,8 +247,12 @@
                     for (var i = 0; i < data.test2flowred.length; i++) {
                         test2reddata.push([data.test2flowred[i], data.test2headred[i]]);
                     }
-                    $("#table1").append("<tr><th>PEI</th><td>"+data.peiresult["PEI"].toFixed(2)+"</td></tr><tr><th>ER</th><td>"+data.peiresult["ER"].toFixed(0)+"</td></tr>");
+                    $("#table1").append("<tr><th colspan='2'>Least Consumptive</th></tr><tr><th>PEI</th><td>"+data.peiresult["PEI"].toFixed(2)+"</td></tr><tr><th>ER</th><td>"+data.peiresult["ER"].toFixed(0)+"</td></tr><tr><th colspan='2'>Most Consumptive</th></tr><tr><th>PEI</th><td>"+data.peiresult["PEI_most_consumptive"].toFixed(2)+"</td></tr><tr><th>ER</th><td>"+data.peiresult["ER_most_consumptive"].toFixed(0)+"</td></tr>");
 
+                    $("#upload_text").append(data.upload_csv_input);
+                    $("#calc_text").append(data.calculator_csv_input);
+                    upload_copy_text = data.upload_csv_input;
+                    calc_copy_text = data.calculator_csv_input;
                     basechartoptions.series[0].data = test1data;
                     basechartoptions.series[1].data = testpointsdata;
                     basechartoptions.series[2].data = test2greendata;

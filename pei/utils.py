@@ -1,4 +1,5 @@
 import math
+from numpy.polynomial.polynomial import Polynomial
 
 
 def yi(pow_i, motorHP):
@@ -312,6 +313,10 @@ def calculateCirculatorPEI(
         h_50_max,
         h_75_max,
         h_100_max,
+        p_25_max,
+        p_50_max,
+        p_75_max,
+        p_100_max,
         q_25_reduced_test,
         q_50_reduced_test,
         q_75_reduced_test,
@@ -325,6 +330,7 @@ def calculateCirculatorPEI(
         p_75_reduced_test,
         p_100_reduced_test,
     ):
+
     weight_25_max = 0.25
     weight_50_max = 0.25
     weight_75_max = 0.25
@@ -369,26 +375,28 @@ def calculateCirculatorPEI(
     if h_25_reduced_test < h_25_ref*1.1:
         p_25_reduced = (h_25_ref/h_25_reduced_test)*(q_25_ref/q_25_reduced_test)*p_25_reduced_test
     else:
-        p_25_reduced = p_25_reduced_test
+        p_25_reduced = (q_25_ref/q_25_reduced_test)*p_25_reduced_test
     
     if h_50_reduced_test < h_50_ref*1.1:
         p_50_reduced = (h_50_ref/h_50_reduced_test)*(q_50_ref/q_50_reduced_test)*p_50_reduced_test
     else:
-        p_50_reduced = p_50_reduced_test
+        p_50_reduced = (q_50_ref/q_50_reduced_test)*p_50_reduced_test
 
     if h_75_reduced_test < h_75_ref*1.1:
         p_75_reduced = (h_75_ref/h_75_reduced_test)*(q_75_ref/q_75_reduced_test)*p_75_reduced_test
     else:
-        p_75_reduced = p_75_reduced_test
+        p_75_reduced = (q_75_ref/q_75_reduced_test)*p_75_reduced_test
 
     if h_100_reduced_test < bep_head*1.1:
         p_100_reduced = (bep_head/h_100_reduced_test)*(bep_flow/q_100_reduced_test)*p_100_reduced_test
     else:
-        p_100_reduced = p_100_reduced_test
+        p_100_reduced = (bep_flow/q_100_reduced_test)*p_100_reduced_test
 
     per_circ = weight_25_reduced*p_25_reduced+weight_50_reduced*p_50_reduced+weight_75_reduced*p_75_reduced+weight_100_reduced*p_100_reduced
+    per_circ_most_consumptive = weight_25_max*p_25_max+weight_50_max*p_50_max+weight_75_max*p_75_max+weight_100_max*p_100_max
 
     pei_circ = per_circ/per_circ_ref
+    pei_circ_most_consumptive = per_circ_most_consumptive/per_circ_ref
 
     eta_wtw_baseline = 7.065*math.log(p_u_100+0.003958)+39.08
     p_25_baseline = p_u_25/(alpha_25_baseline*eta_wtw_baseline/100)
@@ -401,9 +409,22 @@ def calculateCirculatorPEI(
     pei_circ_baseline = per_circ_baseline/per_circ_ref
     
     er_circ = (pei_circ_baseline-pei_circ)*100
+    er_circ_most_consumptive = (pei_circ_baseline-pei_circ_most_consumptive)*100
 
     return {
         "status": "success",
         "PEI": pei_circ,
+        "PEI_most_consumptive": pei_circ_most_consumptive,
         "ER": er_circ,
+        "ER_most_consumptive": er_circ_most_consumptive,
+        "PER_circ_ref": per_circ_ref,
+        "PER_circ": per_circ,
+        "P_in_25": p_25_reduced,
+        "P_in_50": p_50_reduced,
+        "P_in_75": p_75_reduced,
+        "P_in_100": p_100_reduced,
+        "P_in_25_test": p_25_reduced_test,
+        "P_in_50_test": p_50_reduced_test,
+        "P_in_75_test": p_75_reduced_test,
+        "P_in_100_test": p_100_reduced_test,
     }

@@ -342,7 +342,7 @@ def testDataReducePlotData(request):
         X = StandardScaler().fit_transform(combined_chartdata_array)
         # #############################################################################
         # Compute DBSCAN
-        db = DBSCAN(eps=0.08, min_samples=1).fit(X)
+        db = DBSCAN(eps=0.16, min_samples=1).fit(X)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
