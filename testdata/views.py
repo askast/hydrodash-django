@@ -342,7 +342,7 @@ def testDataReducePlotData(request):
         X = StandardScaler().fit_transform(combined_chartdata_array)
         # #############################################################################
         # Compute DBSCAN
-        db = DBSCAN(eps=0.16, min_samples=1).fit(X)
+        db = DBSCAN(eps=0.1, min_samples=1).fit(X)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
@@ -860,3 +860,18 @@ class DirectDataInputView(View):
             "testname": testname
         }
         return JsonResponse(context)
+
+
+
+class KeysightDaqView(View):
+    template_name = "testdata/keysightdaqtest.html"
+
+    def get(self, request, *args, **kwargs):
+
+        context = {
+            "name": self.request.user.get_full_name(),
+            "title1": "Hydro Dash",
+            "activedropdown": "",
+            "activename": "Keysight DAQ Test",
+        }
+        return render(request, self.template_name, context)

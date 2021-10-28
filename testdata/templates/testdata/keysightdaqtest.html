@@ -1,0 +1,99 @@
+{% extends "profiles/stislabase.html" %} 
+{% block extrahead %} 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+{% endblock %} 
+{% block content %}
+
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Keysight DAQ Test</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active">
+                    <a href="#">Dashboard</a>
+                </div>
+                <div class="breadcrumb-item">
+                    <a href="#">Test Data</a>
+                </div>
+                <div class="breadcrumb-item">Keysight DAQ Test</div>
+            </div>
+        </div>
+
+        <div class="section-body">
+            <h2 class="section-title">Test Config</h2>
+            <p class="section-lead">
+                Enter DAQ config details below.
+
+            </p>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <form id="npshform">
+                            <div class="card-header">
+                                <h4>DAQ Config</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-3 form-group">
+                                        <label>Test Name</label>
+                                        <input type="text" id="testname" value="" class="form-control"
+                                            name="testname" required>
+                                    </div>
+                                    <div class="col-12 col-md-3 form-group">
+                                        <label>Test Conducted By</label>
+                                        <input type="text" id="testeng" value="" class="form-control"
+                                            name="testeng" required>
+                                    </div>
+                                    <div class="col-12 col-md-3 form-group">
+                                        <label>DAQ IP Address</label>
+                                        <input type="text" id="daqip" value="10.0.1.37" class="form-control"
+                                            name="daqip" required>
+                                    </div>
+                                    <div class="col-12 col-md-3 form-group">
+                                        <label>Flow Meter Max Range (gpm)</label>
+                                        <input type="text" id="flowmeterrange" value="" class="form-control"
+                                            name="flowmeterrange" required>
+                                    </div>
+                                    <div class="col-12 col-md-3 form-group">
+                                        <label>Delta P Max Range (ft)</label>
+                                        <input type="text" id="deltaprange" value="" class="form-control"
+                                            name="deltaprange" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary" type="submit" id="loaddatabtn">Confirm</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#npshform').submit(function(e){
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'directdatainput' %}",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                data: $('#npshform').serialize(),
+                success: function (data) {
+                    if (data.result == "success") {
+                        Swal.fire({
+                            type: 'success',
+                            title: 'Success',
+                            text: 'Test data added to database. '
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock content%}

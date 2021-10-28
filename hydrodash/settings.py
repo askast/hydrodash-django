@@ -32,7 +32,8 @@ SECRET_KEY = "2fq09bty#s=5$s1j#ez9sng32i9)f6hq!*n5nz23*-+fu$$epo"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["hydrodash", "hydrodash.taco.corp", "127.0.0.1", "localhost"]
+# ALLOWED_HOSTS = ["hydrodash", "hydrodash.taco.corp", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -53,6 +54,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "allauth",
     "django_cleanup",
+    'rest_framework',
+    'apis.apps.ApisConfig',
+    'rpidaq.apps.RpidaqConfig',
+    'django_filters',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -63,6 +69,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "hydrodash.urls"
@@ -120,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/New_York"
 
 USE_I18N = True
 
@@ -134,6 +141,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # LDAP Configuration
 # Baseline configuration.
@@ -167,3 +175,16 @@ LOGIN_REDIRECT_URL = "profile-home"
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny'
+    ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10
+}
+
+CORS_ORIGIN_ALLOW_ALL = True

@@ -3,13 +3,38 @@ import numpy as np
 import pandas as pd
 import json
 from datetime import datetime, timedelta
+from io import BytesIO
+import base64
+import random
+import string
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib import lines
+from matplotlib.cbook import get_sample_data
+import matplotlib.tri as tri
+
+from django.http import JsonResponse
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.conf import settings
+from django.core.files import File
 from django.db.models import F
 from marketingdata.models import MarketingCurveDetail, MarketingCurveData
 from pump.models import Pump, PumpTrim, NPSHData
 from testdata.models import ReducedPumpTestDetails, ReducedPumpTestData, RawTestsList
 from pei.utils import calculatePEI
 from pump.models import OldTestDetails
+
+
+
+mpl.rcParams["font.size"] = 12
+
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
+
 
 # Create your views here.
 def getCoeffs(request):
@@ -1072,4 +1097,252 @@ def importOldDashboard(request):
     #     pump_type = getattr(oldtestdetailobj, 'pump_type')
     #     stand = "inside"
     return HttpResponse("DID IT")
+
+
+def createResidentialCurves(request):
+    def convert_ax_ft_to_m(ax_ft):
+        """
+        Update second axis according with first axis.
+        """
+        y1, y2 = ax_ft.get_ylim()
+        ax_m.set_ylim(ft2m(y1), ft2m(y2))
+        ax_kpa.set_ylim(ft2kpa(y1), ft2kpa(y2))
+        x1, x2 = ax_ft.get_xlim()
+        ax_l.set_xlim(gpm2lps(x1), gpm2lps(x2))
+        # print("y1:"+str(y1)+" y2:"+str(y2)+" kpay1:"+str(ft2kpa(y1))+" kpay2:"+str(ft2kpa(y2)))
+
+        ax_m.figure.canvas.draw()
+
+
+    test_id = request.GET.get("testid", None)
+    pump_name = request.GET.get("pumpname", None)
+
+    # x_axis_limit_string = request.POST.get("xlim", None)
+    # y_axis_limit_string = request.POST.get("ylim", None)
+
+    circ_test_data = list(ReducedPumpTestData.objects.filter(testid__id=test_id).values('flow', 'head', 'power'))
+
+    print(f'circ_test_data:{circ_test_data}')
+    flow = []
+    head = []
+    power = []
+
+    for data_point in circ_test_data:
+        if data_point["flow"] < 0:
+            flow.append(0)
+        else:
+            flow.append(data_point["flow"]*4.402862)
+        head.append(data_point["head"]*3.28084)
+        power.append(data_point["power"]*1.34102)
+    
+    print(f'flow:{flow}')
+    print(f'head:{head}')
+    # print(np.array(flow)*np.array(head))/(np.array(power)*3960)
+    eff = np.divide(np.multiply(flow, head), np.array(power)*3960)*100
+    head_poly = np.poly1d(np.polyfit(flow, head, 6))
+    eff_poly = np.poly1d(np.polyfit(flow, eff, 4))
+
+    print(f'efficiency:{eff}')
+    
+
+    # Lower it to move left. Use .1 if it doesnt interfere with other axis tags
+    l_per_sec_offset = 0.04
+
+    sp_gr_position = [max(flow) * 0.04, max(head) * 0.05]
+
+    plot_flow = np.linspace(0, max(flow), 200)
+    plot_head = head_poly(plot_flow)
+    plot_eff = eff_poly(plot_flow)
+
+    logo = plt.imread(
+        get_sample_data(
+            settings.BASE_DIR + staticfiles_storage.url("profiles/img/logo.png")
+        )
+    )
+
+    plt.rc("font", family="Assistant")
+    fig, (ax_ft, ax_eff) = plt.subplots(
+        2, gridspec_kw={"height_ratios": [1, 1], "hspace": 0.35}
+    )
+
+    ax_m = ax_ft.twinx()
+    ax_l = ax_m.twiny()
+    ax_kpa = ax_l.twinx()
+    fig.subplots_adjust(right=0.87, top=0.9, bottom=0.05)
+    ax_kpa.spines["right"].set_position(("axes", 1.08))
+    fig.set_size_inches(11, 17)
+
+    ax_kpa.set_frame_on(True)
+    ax_kpa.patch.set_visible(False)
+
+
+    # automatically update ylim of ax2 when ylim of ax1 changes.
+    ax_ft.callbacks.connect("ylim_changed", convert_ax_ft_to_m)
+    ax_ft.callbacks.connect("xlim_changed", convert_ax_ft_to_m)
+
+    ax_ft.plot(
+        plot_flow,
+        plot_head,
+        color="k",
+        linewidth=2.0,
+    )
+    ax_eff.plot(
+        plot_flow,
+        plot_eff,
+        color="k",
+        linewidth=2.0,
+    )
+
+    ax_ft.set_xlabel("FLOW IN GALLONS PER MINUTE", fontsize=15)
+    ax_ft.set_ylabel("HEAD IN FEET", fontsize=15)
+    ax_l.set_xlabel("L/SEC", fontsize=12)
+    ax_l.xaxis.set_label_coords(l_per_sec_offset, 1.0175)
+    ax_l.tick_params(direction="out", pad=0)
+    ax_m.set_ylabel("HEAD IN METERS", fontsize=12)
+    ax_kpa.set_ylabel("HEAD IN KILOPASCALS", fontsize=12)
+    ax_ft.grid(b=True, which="major", color="k", linestyle="-", linewidth=0.75)
+    ax_ft.grid(b=True, which="minor", color="#C0C0C0", linestyle="-", linewidth=0.75)
+    ax_ft.minorticks_on()
+    ax_ft.text(
+        sp_gr_position[0],
+        sp_gr_position[1],
+        "CURVES BASED ON CLEAR WATER\nWITH SPECIFIC GRAVITY OF 1.0",
+        fontsize=14,
+        bbox=dict(facecolor="white", edgecolor="none", pad=0.0),
+        ha="left",
+        va="bottom",
+    )
+
+    
+    ax_eff.set_xlabel("FLOW IN GALLONS PER MINUTE", fontsize=15)
+    ax_eff.set_ylabel("EFFICIENCY IN PERCENTAGE", fontsize=15)
+    ax_eff.grid(b=True, which="major", color="k", linestyle="-", linewidth=0.75)
+    ax_eff.grid(b=True, which="minor", color="#C0C0C0", linestyle="-", linewidth=0.75)
+    ax_eff.minorticks_on()
+
+
+    for label in ax_ft.xaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_ft.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_l.xaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_m.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_kpa.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+
+    for label in ax_eff.xaxis.get_majorticklabels():
+        label.set_fontsize(14)
+    for label in ax_eff.yaxis.get_majorticklabels():
+        label.set_fontsize(14)
+
+    x1, x2 = ax_ft.get_xlim()
+    ax_ft.set_xlim(0, x2)
+    y1, y2 = ax_ft.get_ylim()
+    ax_ft.set_ylim(0, y2)
+
+    x1, x2 = ax_eff.get_xlim()
+    ax_eff.set_xlim(0, x2)
+    y1, y2 = ax_eff.get_ylim()
+    ax_eff.set_ylim(0, y2)
+
+    logoax = fig.add_axes([0.13, 0.92, 0.175, 0.175], anchor="SE", zorder=-1)
+    logoax.imshow(logo)
+    logoax.axis("off")
+
+    logoax2 = fig.add_axes([0.13, 0.42, 0.175, 0.175], anchor="SE", zorder=-1)
+    logoax2.imshow(logo)
+    logoax2.axis("off")
+
+
+    plt.gcf().text(
+        0.4,
+        0.935,
+        f"Model: {pump_name}",
+        fontsize=24,
+        weight="bold",
+    )
+    plt.gcf().text(
+        0.4,
+        0.435,
+        f"Model: {pump_name}",
+        fontsize=24,
+        weight="bold",
+    )
+    # plt.gcf().text(
+    #     0.4,
+    #     0.875,
+    #     f'Curve No. xxxx',
+    #     fontsize=14,
+    #     weight="normal",
+    # )
+
+
+
+
+    ax_ft.plot(plot_flow, plot_head, "--", color="k", linewidth=0.5)
+
+    # fig.patch.set_facecolor("xkcd:mint green")
+
+    name = f"{pump_name}_head_eff"
+    plt.savefig(
+        settings.BASE_DIR + f"/media/Outputs/{name}.jpg", format="jpg", dpi=1000
+    )
+    plt.savefig(
+        settings.BASE_DIR + f"/media/Outputs/{name}.pdf", format="pdf", dpi=1000
+    )
+    # print("Outputs\\" + name + ".jpg file created")
+
+    # pdf_buffer = BytesIO()
+    # random_string = randomString()
+    # plt.savefig(pdf_buffer, format="pdf", dpi=1000, bbox_inches="tight")
+    # pdf_buffer.seek(0)
+    # pdf_buffer.close()
+    # svg_buffer = BytesIO()
+    # plt.savefig(svg_buffer, format="svg", dpi=1000, bbox_inches="tight")
+    # svg_buffer.seek(0)
+    # image_svg = svg_buffer.getvalue()
+    # svg_buffer.close()
+
+    # graphic = base64.b64encode(image_svg)
+    # graphic = graphic.decode("utf-8")
+
+    context = {
+        "status": "success",
+        # "plot": graphic,
+    }
+
+    return JsonResponse(context)
+
+
+def my_legend(axis, diameter_label_flow_offset, plot_heads, diameter_label_head_offset):
+    for index, line in enumerate(axis.lines):
+        axis.text(
+            diameter_label_flow_offset,
+            np.amax(plot_heads[index]) + diameter_label_head_offset,
+            line.get_label(),
+            bbox=dict(facecolor="white", edgecolor="none", pad=0.0),
+        )
+
+
+def ft2m(head):
+    return head * 0.3048
+
+
+def ft2kpa(head):
+    return head * 2.98898
+
+
+def gpm2lps(flow):
+    return flow * 0.06309
+
+
+def round_of_eff(number):
+    return round(number * 2) / 2
+
+
+def round_pipe_dia(x):
+    return 0.25 * round(x / 0.25)
+
 

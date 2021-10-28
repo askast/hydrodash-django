@@ -1,5 +1,5 @@
 def context(request):
-    context = {
+    context_dict = {
         "navbardata": {
             "Test Data": [
                 {"url": "/testdata", "icon": "fas fa-lock", "name": "Raw Test Data"},
@@ -9,6 +9,7 @@ def context(request):
                     "name": "Reduced Test Data",
                 },
                 {"url": "/testdata/directdatainput", "icon": "fas fa-lock", "name": "Direct Data Input"},
+                {"url": "/testdata/keysightdaq", "icon": "fas fa-chart-area", "name": "Keysight DAQ Test"},
             ],
             "Design Data": [
                 {
@@ -68,4 +69,4 @@ def context(request):
             ],
         }
     }
-    return {"global_context": context}
+    return {"global_context": context_dict}

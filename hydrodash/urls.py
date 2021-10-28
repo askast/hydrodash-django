@@ -11,6 +11,9 @@ urlpatterns = [
     path("pump/", include("pump.urls")),
     path("scripts/", include("scripts.urls")),
     path("pei/", include("pei.urls")),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api/', include('apis.urls')),
+    path('rpidaq/', include('rpidaq.urls')),
 ]
 
 if settings.DEBUG:
