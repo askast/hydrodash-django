@@ -33,6 +33,7 @@ class RpiDaqData(models.Model):
     channel_17 = models.FloatField(blank=True, null=True)
     channel_18 = models.FloatField(blank=True, null=True)
     channel_19 = models.FloatField(blank=True, null=True)
+    channel_20 = models.FloatField(blank=True, null=True)
     channel_21 = models.FloatField(blank=True, null=True)
     channel_22 = models.FloatField(blank=True, null=True)
     channel_23 = models.FloatField(blank=True, null=True)

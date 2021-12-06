@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 import numpy as np
+from numpy.polynomial import polynomial as P
 import pandas as pd
 import json
 from datetime import datetime, timedelta
@@ -7,6 +8,7 @@ from io import BytesIO
 import base64
 import random
 import string
+import math 
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -39,7 +41,7 @@ def randomString(stringLength=10):
 # Create your views here.
 def getCoeffs(request):
     pump_str = [
-        # ["KV", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KV", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
         # ["KV", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["KV", "2006", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
         # ["KV", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
@@ -60,7 +62,6 @@ def getCoeffs(request):
         # ["KV", "6013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["KV", "8011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
         # ["KV", "8013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
-        # ["KV", "8013", "D", [1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["KS", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
         # ["KS", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["KS", "2006", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
@@ -76,7 +77,7 @@ def getCoeffs(request):
         # ["KS", "4011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
         # ["KS", "4013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["KS", "5007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
-        ["KS", "6007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        # ["KS", "6007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
         # ["KS", "6009", "D", [1160, 1450, 1760], [7.0, 7.75, 8.5, 9.0, 9.5]],
         # ["KS", "6011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
         # ["KS", "6013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
@@ -88,7 +89,6 @@ def getCoeffs(request):
         # ["FI", "1207", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["FI", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["FI", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
-        # ["FI", "2007", "D", [3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["FI", "2507", "D", [1160, 1450, 1760, 2900, 3500], [5.5, 6.0, 6.5, 6.875, 7.25]],
         # ["FI", "3007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["FI", "4007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
@@ -98,7 +98,6 @@ def getCoeffs(request):
         # ["FI", "2509", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25,  9.0, 9.5]],
         # ["FI", "3009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25,  9.0, 9.5]],
         # ["FI", "4009", "D", [1160, 1450, 1760], [6.75, 7.5, 8.25,  9.0, 9.5]],
-        # ["FI", "4009", "D", [1760], [6.75, 7.5, 8.25,  9.0, 9.5]],
         # ["FI", "5009", "D", [1160, 1450, 1760], [7.0, 7.5, 8.0, 8.5, 9.0, 9.5]],
         # ["FI", "6009", "D", [1160, 1450, 1760], [7.5, 8.0, 8.5, 9.0, 9.5]],
         # ["FI", "2511", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
@@ -110,7 +109,6 @@ def getCoeffs(request):
         # ["FI", "4013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["FI", "5013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["FI", "6013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
-        # ["FI", "8013", "D", [1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["FI", "8013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
         # ["CI", "1206", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
         # ["CI", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
@@ -118,7 +116,6 @@ def getCoeffs(request):
         # ["CI", "1207", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["CI", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["CI", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
-        # ["CI", "2007", "D", [3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["CI", "2507", "D", [1160, 1450, 1760, 2900, 3500], [5.5, 6.0, 6.5, 6.875, 7.25]],
         # ["CI", "3007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
         # ["CI", "4007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
@@ -206,7 +203,7 @@ def getCoeffs(request):
             max_flow = flows_max[-1] * 4.402862
 
             # establish quadratic of max flows
-            a_max = head_poly_max(max_flow).item() / pow(max_flow, 2)
+            a_max = head_poly_max(max_flow).item() / math.pow(max_flow, 2)
             
 
             for trim in trims:
@@ -278,6 +275,338 @@ def getCoeffs(request):
     return response
 
     # return HttpResponse(return_string, content_type="text/plain")
+
+def getVarSpeedCoeffs(request):
+    pump_list = [
+        ["KV", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KV", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["KV", "2006", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KV", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["KV", "2009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["KV", "3006", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KV", "3007", "D", [1160, 1450, 1760, 2900, 3500], [5.5, 6.0, 6.5, 6.875, 7.25]],
+        ["KV", "3009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["KV", "3011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KV", "3013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KV", "4007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["KV", "4009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["KV", "4011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KV", "4013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KV", "5007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["KV", "6007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["KV", "6009", "D", [1160, 1450, 1760], [7.0, 7.75, 8.5, 9.0, 9.5]],
+        ["KV", "6011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KV", "6013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KV", "8011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KV", "8013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KS", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KS", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["KS", "2006", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KS", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["KS", "2009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["KS", "3006", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["KS", "3007", "D", [1160, 1450, 1760, 2900, 3500], [5.5, 6.0, 6.5, 6.875, 7.25]],
+        ["KS", "3009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["KS", "3011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KS", "3013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KS", "4007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["KS", "4009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["KS", "4011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KS", "4013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KS", "5007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["KS", "6007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["KS", "6009", "D", [1160, 1450, 1760], [7.0, 7.75, 8.5, 9.0, 9.5]],
+        ["KS", "6011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KS", "6013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["KS", "8011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["KS", "8013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["FI", "1206", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["FI", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["FI", "2506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["FI", "1207", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["FI", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["FI", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["FI", "2507", "D", [1160, 1450, 1760, 2900, 3500], [5.5, 6.0, 6.5, 6.875, 7.25]],
+        ["FI", "3007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["FI", "4007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["FI", "5007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["FI", "1509", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["FI", "2009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["FI", "2509", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25,  9.0, 9.5]],
+        ["FI", "3009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25,  9.0, 9.5]],
+        ["FI", "4009", "D", [1160, 1450, 1760], [6.75, 7.5, 8.25,  9.0, 9.5]],
+        ["FI", "5009", "D", [1160, 1450, 1760], [7.0, 7.5, 8.0, 8.5, 9.0, 9.5]],
+        ["FI", "6009", "D", [1160, 1450, 1760], [7.5, 8.0, 8.5, 9.0, 9.5]],
+        ["FI", "2511", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["FI", "3011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["FI", "5011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["FI", "6011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["FI", "2513", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["FI", "3013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["FI", "4013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["FI", "5013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["FI", "6013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["FI", "8013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["CI", "1206", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["CI", "1506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["CI", "2506", "D", [1450, 1760, 2900, 3500], [4.25, 4.75, 5.25, 5.75, 6.25]],
+        ["CI", "1207", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["CI", "1507", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["CI", "2007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["CI", "2507", "D", [1160, 1450, 1760, 2900, 3500], [5.5, 6.0, 6.5, 6.875, 7.25]],
+        ["CI", "3007", "D", [1160, 1450, 1760, 2900, 3500], [5.25, 5.75, 6.25, 6.75, 7.25]],
+        ["CI", "4007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["CI", "5007", "D", [1160, 1450, 1760, 2900, 3500], [5.75, 6.25, 6.75, 7.25]],
+        ["CI", "1509", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["CI", "2009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25, 9.0, 9.5]],
+        ["CI", "2509", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25,  9.0, 9.5]],
+        ["CI", "3009", "D", [1160, 1450, 1760, 2900, 3500], [6.75, 7.5, 8.25,  9.0, 9.5]],
+        ["CI", "4009", "D", [1160, 1450, 1760], [6.75, 7.5, 8.25,  9.0, 9.5]],
+        ["CI", "5009", "D", [1160, 1450, 1760], [7.0, 7.5, 8.0, 8.5, 9.0, 9.5]],
+        ["CI", "6009", "D", [1160, 1450, 1760], [7.5, 8.0, 8.5, 9.0, 9.5]],
+        ["CI", "2511", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["CI", "3011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["CI", "5011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["CI", "6011", "D", [1160, 1450, 1760], [8.0, 8.75, 9.5, 10.25, 11.0]],
+        ["CI", "2513", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["CI", "3013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+        ["CI", "4013", "D", [1160, 1450, 1760], [9.5, 10.5, 11.5, 12.5, 13.5]],
+    ]
+
+    var_speed_trims = {
+        "FI1206D_1800":[4.5, 5.25, 5.75, 6.25],
+        "FI1207D_1800":[5.6, 6.3, 7.25],
+        "FI1506D_1800":[4.3, 5.1, 5.5, 6.1, 6.25],
+        "FI1507D_1800":[5.3, 6, 6.7, 7.25],
+        "FI1509D_1800":[6.75, 7.5, 8.8, 9.5],
+        "FI2007D_1800":[5.75, 6.25, 7.25],
+        "FI2009D_1800":[7.3, 8.5, 9.5],
+        "FI2506D_1800":[4.75, 5.2, 5.8, 6.25],
+        "FI2507D_1800":[6.1, 7.25],
+        "FI2509D_1800":[6.75, 7.9, 9, 9.5],
+        "FI2511D_1800":[8.2, 9.3, 10.1, 11],
+        "FI2513D_1800":[9.5, 10.8, 11.8, 13.1, 13.5],
+        "FI3007D_1800":[6, 7.2, 7.25],
+        "FI3009D_1800":[6.75, 7.7, 8.5, 9.5],
+        "FI3011D_1800":[8.6, 9.9, 11],
+        "FI3013D_1800":[10.1, 11, 11.8, 12.5, 13.5],
+        "FI4007D_1800":[6.4, 7.25],
+        "FI4009D_1800":[7, 7.8, 8.9, 9.5],
+        "FI4013D_1800":[9.6, 10.4, 11.3, 12.4, 13.3, 13.5],
+        "FI5007D_1800":[6.1, 6.9, 7.25],
+        "FI5009D_1800":[7.3, 8.3, 9.2, 9.5],
+        "FI5011D_1800":[8.2, 9.3, 10.1, 10.7, 11],
+        "FI5013D_1800":[9.5, 10.1, 11, 11.9, 12.8, 13.5],
+        "FI6009D_1800":[7.7, 8.4, 8.9, 9.5],
+        "FI6011D_1800":[8.5, 9, 9.9, 10.6, 11],
+        "FI6013D_1800":[9.7, 10.5, 11, 11.9, 12.9, 13.5],
+        "FI8013D_1800":[9.8, 10.3, 10.9, 11.6, 12.5, 13.1],
+        "FI1206D_3600":[4.4, 5.1, 5.8, 6.25],
+        "FI1207D_3600":[5.75, 6.2, 7.25],
+        "FI1506D_3600":[4.8, 5.25, 6.1, 6.25],
+        "FI1507D_3600":[5.25, 5.75, 6.6, 7.25],
+        "FI1509D_3600":[6.8, 7.3, 7.8, 8.4, 9.1, 9.5],
+        "FI2007D_3600":[5.5, 6.3, 7, 7.25],
+        "FI2009D_3600":[7.1, 7.6, 8, 8.7, 9.4, 9.5],
+        "FI2506D_3600":[4.7, 5.2, 5.7, 6.25],
+        "FI2507D_3600":[5.9, 6.3, 6.8, 7.25],
+        "FI2509D_3600":[7.3, 8.1, 8.7, 9.1, 9.5],
+        "FI3007D_3600":[5.25, 5.75, 6.2, 6.6, 7.25],
+        "FI3009D_3600":[6.9, 7.4, 7.8, 8.5, 9.4, 9.5],
+        "FI4007D_3600":[5.8, 6.1, 6.6, 7.1, 7.25],
+        "FI5007D_3600":[6.2, 6.7, 7, 7.25],
+    }
+
+    return_string = "Pump, Speed, Diameter, Flow, Head, Flow, Eta, NPSH Flow, NPSH"
+    return_list = []
+
+    for series, model, d, speeds, trims in pump_list:
+        for speed in speeds:
+            return_object = {
+                "Model": f"{series}{model}{d}",
+                "Speed": speed,
+                "#NPSH": 1,
+                "#Trims": len(trims),
+            }
+
+            print(f"Looking up :\n {series}{model}{d} {speed}rpm")
+            pumpobj = Pump.objects.get(
+                series=series, pump_model=model, design_iteration=d, speed=speed
+            )
+
+            npsh_data = NPSHData.objects.filter(pump=pumpobj).values("flow", "npsh")
+            npsh_data = np.array(
+                [
+                    [point["flow"] * 4.402862, point["npsh"] * 3.28084]
+                    for point in npsh_data
+                ]
+            )
+            npsh_data = npsh_data[np.argsort(npsh_data[:, 0])]
+            return_object["NPSHMinFlow"] = [np.amin(npsh_data.T[0]).item(), 0]
+            return_object["NPSHMaxFlow"] = [np.amax(npsh_data.T[0]).item(), 0]
+            npsh_coeffs = list(np.polyfit(npsh_data.T[0], npsh_data.T[1], 3))
+            npsh_poly = np.poly1d(np.polyfit(npsh_data.T[0], npsh_data.T[1], 3))
+            npsh_coeffs.insert(0, 0)
+            npsh_coeffs.insert(0, 0)
+            
+            sample_npsh_flows = np.linspace(np.amin(npsh_data.T[0]).item(), np.amax(npsh_data.T[0]).item(), 30)
+            sample_npsh = npsh_poly(sample_npsh_flows)
+
+            return_object["NPSH-coeffs"] = npsh_coeffs
+            head_coeffs_list = []
+            eff_coeffs_list = []
+            min_flows_list = []
+            max_flows_list = []
+            sample_flows_list = []
+            sample_heads_list = []
+            sample_effs_list = []
+            max_trim = max(trims)
+
+            # get max flow of max trim
+            pump_max_trim_obj = PumpTrim.objects.get(
+                pump__series=series,
+                pump__pump_model=model,
+                pump__design_iteration=d,
+                pump__speed=speed,
+                trim=max_trim,
+            )
+            head_poly_max = np.poly1d(
+                getattr(pump_max_trim_obj.marketing_data, "headcoeffs")
+            )
+            # eff_poly_max = np.poly1d(getattr(pump_max_trim_obj.marketing_data, "effcoeffs"))
+            flows_max = list(
+                MarketingCurveData.objects.filter(
+                    curveid=pump_max_trim_obj.marketing_data
+                )
+                .order_by("flow")
+                .values_list("flow", flat=True)
+            )
+            max_flow = flows_max[-1] * 4.402862
+
+            # establish quadratic of max flows
+            a_max = head_poly_max(max_flow).item() / math.pow(max_flow, 2)
+            
+            
+            for trim in var_speed_trims[f"{series}{model}{d}_{speed}"]:
+                print(f'Looking up :\n {trim}" trim')
+                low_trim = filter(lambda n:n<=trim, trims)
+                high_trim = filter(lambda n:n>=trim, trims)
+
+                pump_trim_obj_low_trim = PumpTrim.objects.get(
+                    pump__series=series,
+                    pump__pump_model=model,
+                    pump__design_iteration=d,
+                    pump__speed=speed,
+                    trim=low_trim,
+                )
+                pump_trim_obj_high_trim = PumpTrim.objects.get(
+                    pump__series=series,
+                    pump__pump_model=model,
+                    pump__design_iteration=d,
+                    pump__speed=speed,
+                    trim=high_trim,
+                )
+                head_poly_low_trim = np.poly1d(
+                    getattr(pump_trim_obj_low_trim.marketing_data, "headcoeffs")
+                )
+                eff_poly_low_trim = np.poly1d(getattr(pump_trim_obj_low_trim.marketing_data, "effcoeffs"))
+                flows_low_trim = list(
+                    MarketingCurveData.objects.filter(
+                        curveid=pump_trim_obj_low_trim.marketing_data
+                    )
+                    .order_by("flow")
+                    .values_list("flow", flat=True)
+                )
+                head_poly_high_trim = np.poly1d(
+                    getattr(pump_trim_obj_high_trim.marketing_data, "headcoeffs")
+                )
+                eff_poly_high_trim = np.poly1d(getattr(pump_trim_obj_high_trim.marketing_data, "effcoeffs"))
+                flows_high_trim = list(
+                    MarketingCurveData.objects.filter(
+                        curveid=pump_trim_obj_high_trim.marketing_data
+                    )
+                    .order_by("flow")
+                    .values_list("flow", flat=True)
+                )
+
+                
+                trim_flows = [0]
+                trim_heads = [math.pow(trim/low_trim,2)*head_poly_low_trim(0)*((high_trim-trim)/(high_trim-low_trim))+math.pow(trim/high_trim,2)*head_poly_high_trim(0)*((trim-low_trim)/(high_trim-low_trim))]
+
+                for high_trim_sample_flow in np.linspace(max(flows_high_trim)/20, max(flows_high_trim), 19):
+                    trim_quad_a = head_poly_high_trim(high_trim_sample_flow)/math.pow(high_trim_sample_flow,2)
+                    roots_poly_high_trim = np.roots(np.polysub(head_poly_high_trim, np.poly1d([trim_quad_a, 0, 0])))
+                    high_trim_flow = 0
+                    for root in roots_poly_high_trim:
+                        if root >= 0 and root <= high_trim_sample_flow:
+                            high_trim_flow = root
+                            break
+                    high_trim_head = head_poly_high_trim(high_trim_flow)
+                    roots_poly_low_trim = np.roots(np.polysub(head_poly_low_trim, np.poly1d([trim_quad_a, 0, 0])))
+                    low_trim_flow = 0
+                    for root in roots_poly_low_trim:
+                        if root >= 0 and root <= high_trim_sample_flow:
+                            low_trim_flow = root
+                            break
+                    low_trim_head = head_poly_low_trim(low_trim_flow)
+                    trim_flows.append(low_trim_flow+((trim-low_trim)/(high_trim-low_trim))*(high_trim_flow-low_trim_flow))
+                    trim_heads.append(trim_quad_a*math.pow(trim_flows[-1], 2))
+
+
+
+
+
+                # determine max flow as intersection of quadratic and head_poly
+                if trim != max_trim:
+                    temp_flows = np.linspace(0, (max_flow + 5), 100)
+                    curve_heads = head_poly(temp_flows)
+                    temp_heads = np.power(temp_flows, 2) * a_max
+                    # print(f"curve:{curve_heads}\ntemp:{temp_heads}")
+                    intercept_flowheads_max = interpolated_intercept(temp_flows, temp_heads, curve_heads)
+                    trim_max_flow = intercept_flowheads_max[0]
+                else:
+                    trim_max_flow = max_flow
+
+                sample_flows = np.linspace(0, trim_max_flow, 30)
+                sample_heads = head_poly(sample_flows)
+                sample_effs = eff_poly(sample_flows) * 100
+                # sample_flows_list.append(sample_flows)
+                # sample_heads_list.append(sample_heads)
+                # sample_effs_list.append(sample_effs)
+                for sflow, shead, seff, snflow, snpsh in zip(sample_flows, sample_heads, sample_effs, sample_npsh_flows, sample_npsh):
+                    if trim == max_trim:
+                        return_string += f"\n{series}{model}{d}, {speed}, {trim}, {sflow}, {shead}, {sflow}, {seff}, {snflow}, {snpsh}"
+                    else:
+                        return_string += f"\n{series}{model}{d}, {speed}, {trim}, {sflow}, {shead}, {sflow}, {seff}, , "
+                head_coeffs = np.polyfit(sample_flows, sample_heads, 5).tolist()
+                eff_coeffs = np.polyfit(sample_flows, sample_effs, 5).tolist()
+
+                head_coeffs_list.append(head_coeffs)
+                eff_coeffs_list.append(eff_coeffs)
+                bep_flow = getattr(pump_trim_obj.marketing_data, "bep_flow")
+                min_flows_list.append(0.3 * bep_flow * 4.402862)
+                max_flows_list.append(trim_max_flow)
+
+            return_object["TrimMinFlows"] = min_flows_list
+            return_object["TrimDia"] = trims
+            return_object["TrimMaxFlows"] = max_flows_list
+            return_object["Head-Coeff"] = head_coeffs_list
+            return_object["Eff-Coeff"] = eff_coeffs_list
+            return_list.append(return_object)
+
+            
+
+    # return_string = json.dumps(return_list)
+        
+     
+    response = HttpResponse(return_string, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename={0}'.format("Intelliquip_export.csv")
+    return response
+
+    # return HttpResponse(return_string, content_type="text/plain")
+
+
+
 
 def interpolated_intercept(x, y1, y2):
     """Find the intercept of two curves, given by the same x data"""

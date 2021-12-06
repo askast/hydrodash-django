@@ -8,7 +8,8 @@ from .views import (
     getPEIupload,
     populatePumps,
     importOldDashboard,
-    createResidentialCurves
+    createResidentialCurves,
+    varspeedcoeffs
 )
 
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
     path("populate", login_required(populatePumps), name="populate"),
     path("import", login_required(importOldDashboard), name="import"),
     path("rescurves", login_required(createResidentialCurves), name="rescurves"),
+    path("varspeedcoeffs", login_required(varspeedcoeffs), name="varspeedcoeffs"),
 ]
