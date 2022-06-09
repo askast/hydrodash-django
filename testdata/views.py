@@ -411,10 +411,17 @@ def reduceTestData(request):
         id=source[0]).values("path")[0]['path']
     record = dict(DBF(testpath, load=True).records[1])
     tempdatetime = str(record['Date'])+" "+record['Time']
-    if stand == "outside":
+    print(f"stand:{stand}")
+    # if stand in ["outside", "rs2"] :
+    #     testdate = datetime.strptime(
+    #         tempdatetime, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4)
+    # else:
+    #     testdate = datetime.strptime(
+    #         tempdatetime, "%Y-%m-%d %H:%M:%S.%f") + timedelta(hours=4)
+    try:
         testdate = datetime.strptime(
             tempdatetime, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4)
-    else:
+    except:
         testdate = datetime.strptime(
             tempdatetime, "%Y-%m-%d %H:%M:%S.%f") + timedelta(hours=4)
 

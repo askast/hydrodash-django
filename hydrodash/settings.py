@@ -145,9 +145,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 # LDAP Configuration
 # Baseline configuration.
-AUTH_LDAP_SERVER_URI = "LDAP://TCR-AD02.taco.corp"
+AUTH_LDAP_SERVER_URI = "LDAP://TCR-DC-02.taco.corp"
 
-AUTH_LDAP_BIND_DN = "CN=Fluid Dynamics,OU=Admin Accounts,OU=TCR,OU=Taco,DC=taco,DC=corp"
+AUTH_LDAP_BIND_DN = "CN=Fluid Dynamics,OU=Service Accounts,OU=TCR,OU=Taco,DC=taco,DC=corp"
 AUTH_LDAP_BIND_PASSWORD = "ewzKAELz7h111v"
 # AUTH_LDAP_BIND_DN = 'CN=Atul Tambi,OU=Engineering,OU=TCR,OU=Taco,DC=taco,DC=corp'
 # AUTH_LDAP_BIND_PASSWORD = 'best fish sandwich'

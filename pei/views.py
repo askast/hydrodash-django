@@ -1,16 +1,16 @@
 import os
-from django.shortcuts import render
+# from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.generic.base import TemplateView
 import math
-import numpy as np
-from numpy.lib.function_base import place
+# import numpy as np
+# from numpy.lib.function_base import place
 from numpy.polynomial.polynomial import Polynomial
 from scipy import interpolate
 from scipy.optimize import minimize_scalar
 
 from .utils import calculateCirculatorPEI
-from profiles.models import Profile
+# from profiles.models import Profile
 from testdata.models import ReducedPumpTestDetails, ReducedPumpTestData
 
 
@@ -219,6 +219,7 @@ def circPeiData(request):
     test2_eff = []
     calculator_spreadsheet_input_csv = []
     upload_spreadsheet_input_csv = []
+    doe_spreadsheet_input_csv = []
     
 
     for record in test1data:
@@ -260,6 +261,7 @@ def circPeiData(request):
     flow_25 = 0.25*bep_flow
     flow_50 = 0.5*bep_flow
     flow_75 = 0.75*bep_flow
+    flow_110 = 1.1*bep_flow
     head_25 = (0.8*math.pow(flow_25/bep_flow, 2)+0.2)*bep_head
     head_50 = (0.8*math.pow(flow_50/bep_flow, 2)+0.2)*bep_head
     head_75 = (0.8*math.pow(flow_75/bep_flow, 2)+0.2)*bep_head
@@ -359,10 +361,12 @@ def circPeiData(request):
     test1_head_25 = test1_head_func(flow_25)
     test1_head_50 = test1_head_func(flow_50)
     test1_head_75 = test1_head_func(flow_75)
+    test1_head_110 = test1_head_func(flow_110)
     
     test1_power_25 = power_poly(flow_25)
     test1_power_50 = power_poly(flow_50)
     test1_power_75 = power_poly(flow_75)
+    test1_power_110 = power_poly(flow_110)
     
 
     if None not in approved_test2_flow:
@@ -397,6 +401,17 @@ def circPeiData(request):
         upload_spreadsheet_input_csv.extend([test1_head_25, test1_head_50, test1_head_75, bep_head])
         upload_spreadsheet_input_csv.extend([bep_flow, PEI_result["PEI"], PEI_result["PEI_most_consumptive"]])
 
+        doe_spreadsheet_input_csv.extend(["", "Taco", test1name, "CP1", "ECM", "", "", "", "", "", ""])
+        doe_spreadsheet_input_csv.extend([bep_flow, bep_head, "", bep_power*745.699872, bep_flow*bep_head/(3960*bep_power)])
+        doe_spreadsheet_input_csv.extend([flow_25, test1_head_25, "", test1_power_25*745.699872, flow_25*test1_head_25/(3960*test1_power_25)])
+        doe_spreadsheet_input_csv.extend([flow_50, test1_head_50, "", test1_power_50*745.699872, flow_50*test1_head_50/(3960*test1_power_50)])
+        doe_spreadsheet_input_csv.extend([flow_75, test1_head_75, "", test1_power_75*745.699872, flow_75*test1_head_75/(3960*test1_power_75)])
+        doe_spreadsheet_input_csv.extend([flow_110, test1_head_110, "", test1_power_110*745.699872, flow_110*test1_head_110/(3960*test1_power_110)])
+        doe_spreadsheet_input_csv.extend(["", "", "", "", ""])
+        doe_spreadsheet_input_csv.extend([test2_flow_25, test2_head_25, "", test2_power_25*745.699872, test2_flow_25*test2_head_25/(3960*test2_power_25)])
+        doe_spreadsheet_input_csv.extend([test2_flow_50, test2_head_50, "", test2_power_50*745.699872, test2_flow_50*test2_head_50/(3960*test2_power_50)])
+        doe_spreadsheet_input_csv.extend([test2_flow_75, test2_head_75, "", test2_power_75*745.699872, test2_flow_75*test2_head_75/(3960*test2_power_75)])
+
     else:
         PEI_result = {
             "status": "failed",
@@ -421,6 +436,16 @@ def circPeiData(request):
         upload_spreadsheet_input_csv.extend(["", ""])
         upload_spreadsheet_input_csv.extend([test1_head_25, test1_head_50, test1_head_75, bep_head])
     
+        doe_spreadsheet_input_csv.extend(["", "Taco", test1name, "CP1", "ECM", "", "", "", "", "", ""])
+        doe_spreadsheet_input_csv.extend([bep_flow, bep_head, "", bep_power*745.699872, bep_flow*bep_head/(3960*bep_power)])
+        doe_spreadsheet_input_csv.extend([flow_25, test1_head_25, "", test1_power_25*745.699872, flow_25*test1_head_25/(3960*test1_power_25)])
+        doe_spreadsheet_input_csv.extend([flow_50, test1_head_50, "", test1_power_50*745.699872, flow_50*test1_head_50/(3960*test1_power_50)])
+        doe_spreadsheet_input_csv.extend([flow_75, test1_head_75, "", test1_power_75*745.699872, flow_75*test1_head_75/(3960*test1_power_75)])
+        doe_spreadsheet_input_csv.extend([flow_110, test1_head_110, "", test1_power_110*745.699872, flow_110*test1_head_110/(3960*test1_power_110)])
+        doe_spreadsheet_input_csv.extend(["", "", "", "", ""])
+        doe_spreadsheet_input_csv.extend([test2_flow_25, test2_head_25, "", test2_power_25*745.699872, test2_flow_25*test2_head_25/(3960*test2_power_25)])
+        doe_spreadsheet_input_csv.extend([test2_flow_50, test2_head_50, "", test2_power_50*745.699872, test2_flow_50*test2_head_50/(3960*test2_power_50)])
+        doe_spreadsheet_input_csv.extend([test2_flow_75, test2_head_75, "", test2_power_75*745.699872, test2_flow_75*test2_head_75/(3960*test2_power_75)])
     
     test2_flow_red = []
     test2_head_red = []
@@ -452,5 +477,6 @@ def circPeiData(request):
         "peiresult": PEI_result,
         "calculator_csv_input": ",".join(map(str, calculator_spreadsheet_input_csv)),
         "upload_csv_input": ",".join(map(str, upload_spreadsheet_input_csv)),
+        "doe_survey_csv_input": ",".join(map(str, doe_spreadsheet_input_csv)),
     }
     return JsonResponse(context)

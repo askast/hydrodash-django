@@ -135,6 +135,18 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>DOE Survey Speadsheet Input</h4>
+                                                </div>
+                                                <div class="card-body" id="doe_survey_text">
+                                                </div>
+                                                <div class="card-footer text-right">
+                                                    <button class="btn btn-primary" id='doe_survey_btn'>Copy</button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -149,6 +161,7 @@
 <script>
     var upload_copy_text = "";
     var calc_copy_text = "";
+    var doe_survey_copy_text = "";
     function copyToClipboard(text) {
         var $temp = $("<input>");
         $("body").append($temp);
@@ -167,6 +180,12 @@
             function(event) {
                 event.preventDefault();
                 copyToClipboard(upload_copy_text);
+            }
+        );
+        $("#doe_survey_btn").click(
+            function(event) {
+                event.preventDefault();
+                copyToClipboard(doe_survey_copy_text);
             }
         );
         var basechartoptions = {
@@ -251,8 +270,10 @@
 
                     $("#upload_text").append(data.upload_csv_input);
                     $("#calc_text").append(data.calculator_csv_input);
+                    $("#doe_survey_text").append(data.doe_survey_csv_input);
                     upload_copy_text = data.upload_csv_input;
                     calc_copy_text = data.calculator_csv_input;
+                    doe_survey_copy_text = data.doe_survey_csv_input;
                     basechartoptions.series[0].data = test1data;
                     basechartoptions.series[1].data = testpointsdata;
                     basechartoptions.series[2].data = test2greendata;

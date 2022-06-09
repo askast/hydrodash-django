@@ -300,6 +300,381 @@ def calculatePEI(
         "controller_power_bep": controller_input_power_bep,
         "motor_hp": motorHP,
         "motor_eff": motorEfficiency,
+        "c_factor": C_factor,
+        "PERcl": PERcl,
+        "PERvl": PERvl
+    }
+
+
+
+def evaluatePEIrule(
+    bep_flow,
+    bep_head,
+    bep_power,
+    flow_75,
+    head_75,
+    power_75,
+    flow_110,
+    head_110,
+    power_110,
+    power_120,
+    tempRPM,
+    pump_type,
+    test_type,
+    motor_hp=0,
+    motor_eff=0,
+    ):
+    bep_power = bep_power * 1.34102
+    power_75 = power_75 * 1.34102
+    power_110 = power_110 * 1.34102
+    power_120 = power_120 * 1.34102
+
+    bep_head = bep_head * 3.28084
+    head_75 = head_75 * 3.28084
+    head_110 = head_110 * 3.28084
+
+    bep_flow = bep_flow * 4.402868
+    flow_75 = flow_75 * 4.402868
+    flow_110 = flow_110 * 4.402868
+
+    if 1440 <= tempRPM <= 2160:
+        nomspeed = 1800
+    elif 2880 <= tempRPM <= 4320:
+        nomspeed = 3600
+    else:
+        return {"status": "fail", "reason": "RPM not within range"}
+
+    if nomspeed == 1800:
+        if pump_type in ["ESCC", "CI"]:
+            C_factor_EL2 = 128.47
+            C_factor_EL3 = 126.67
+            C_factor_EL4 = 125.07
+            C_factor_EL5 = 123.71
+        elif pump_type in ["ESFM", "FI"]:
+            C_factor_EL2 = 128.85
+            C_factor_EL3 = 127.04
+            C_factor_EL4 = 125.12
+            C_factor_EL5 = 123.71
+        elif pump_type in ["IL", "KV", "KS", "TA", "1600", "1900"]:
+            C_factor_EL2 = 129.3
+            C_factor_EL3 = 127.9
+            C_factor_EL4 = 126
+            C_factor_EL5 = 124
+        elif pump_type in ["RSV"]:
+            C_factor_EL2 = 124.73
+            C_factor_EL3 = 124.73
+            C_factor_EL4 = 124.73
+            C_factor_EL5 = 124.73
+        elif pump_type in ["ST"]:
+            C_factor_EL2 = 127.15
+            C_factor_EL3 = 127.15
+            C_factor_EL4 = 127.15
+            C_factor_EL5 = 127.15
+        else:
+            return {"status": "fail", "reason": "Pump type not recognized"}
+    elif nomspeed == 3600:
+        if pump_type in ["ESCC", "CI"]:
+            C_factor_EL2 = 130.42
+            C_factor_EL3 = 128.92
+            C_factor_EL4 = 127.35
+            C_factor_EL5 = 125.29
+        elif pump_type in ["ESFM", "FI"]:
+            C_factor_EL2 = 130.99
+            C_factor_EL3 = 129.26
+            C_factor_EL4 = 127.77
+            C_factor_EL5 = 126.07
+        elif pump_type in ["IL", "KV", "KS", "TA", "1600", "1900"]:
+            C_factor_EL2 = 133.84
+            C_factor_EL3 = 131.04
+            C_factor_EL4 = 129.38
+            C_factor_EL5 = 127.35
+        elif pump_type in ["RSV"]:
+            C_factor_EL2 = 129.1
+            C_factor_EL3 = 129.1
+            C_factor_EL4 = 129.1
+            C_factor_EL5 = 129.1
+        elif pump_type in ["ST"]:
+            C_factor_EL2 = 134.85
+            C_factor_EL3 = 131.92
+            C_factor_EL4 = 129.25
+            C_factor_EL5 = 127.15
+        else:
+            return {"status": "fail", "reason": "Pump type not recognized"}
+    else:
+        return {"status": "fail", "reason": "Pump speed not recognized"}
+
+    bep_flow_corr = bep_flow * (nomspeed / tempRPM)
+    bep_head_corr = bep_head * math.pow((nomspeed / tempRPM), 2)
+    bep_power_corr = bep_power * math.pow((nomspeed / tempRPM), 3)
+    flow_75_corr = flow_75 * (nomspeed / tempRPM)
+    head_75_corr = head_75 * math.pow((nomspeed / tempRPM), 2)
+    power_75_corr = power_75 * math.pow((nomspeed / tempRPM), 3)
+    flow_110_corr = flow_110 * (nomspeed / tempRPM)
+    head_110_corr = head_110 * math.pow((nomspeed / tempRPM), 2)
+    power_110_corr = power_110 * math.pow((nomspeed / tempRPM), 3)
+    power_120_corr = power_120 * math.pow((nomspeed / tempRPM), 3)
+
+    specificSpeed = (
+        nomspeed * math.pow(bep_flow_corr, 0.5) * math.pow(bep_head_corr, -0.75)
+    )
+
+    # print(f'\nbep_flow_corr: {bep_flow_corr}\n specificSpeed: {specificSpeed}\n C_factor: {C_factor}')
+
+    hydrobep_power = bep_flow_corr * bep_head_corr / 3956
+    hydropower_75 = flow_75_corr * head_75_corr / 3956
+    hydropower_110 = flow_110_corr * head_110_corr / 3956
+
+    motorHPs = [
+        1,
+        1.5,
+        2,
+        3,
+        5,
+        7.5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        40,
+        50,
+        60,
+        75,
+        100,
+        125,
+        150,
+        200,
+        250,
+    ]
+    motor_eff_1800 = [
+        85.5,
+        86.5,
+        86.5,
+        89.5,
+        89.5,
+        91.0,
+        91.7,
+        92.4,
+        93.0,
+        93.6,
+        93.6,
+        94.1,
+        94.5,
+        95.0,
+        95.0,
+        95.4,
+        95.4,
+        95.8,
+        95.8,
+        95.8,
+    ]
+    motor_eff_3600 = [
+        77.0,
+        84.0,
+        85.5,
+        85.5,
+        86.5,
+        88.5,
+        89.5,
+        90.2,
+        91.0,
+        91.7,
+        91.7,
+        92.4,
+        93.0,
+        93.6,
+        93.6,
+        93.6,
+        94.1,
+        94.1,
+        95.0,
+        95.0,
+    ]
+
+    if motor_hp == 0:
+        for index, motorHP in enumerate(motorHPs):
+            if motorHP > power_120_corr:
+                break
+    else:
+        motorHP = motor_hp
+        index = motorHPs.index(motor_hp)
+
+    if motor_eff == 0:
+        if nomspeed == 3600:
+            motorEfficiency = motor_eff_3600[index]
+        else:
+            motorEfficiency = motor_eff_1800[index]
+    else:
+        motorEfficiency = motor_eff
+
+    motorLossFull = (motorHP / (motorEfficiency / 100)) - motorHP
+    STDEff_EL2 = (
+        -0.85 * math.pow(math.log(bep_flow_corr), 2)
+        - 0.38 * math.log(specificSpeed) * math.log(bep_flow_corr)
+        - 11.48 * math.pow(math.log(specificSpeed), 2)
+        + 17.80 * math.log(bep_flow_corr)
+        + 179.80 * math.log(specificSpeed)
+        - (C_factor_EL2 + 555.6)
+    ) / 100
+    STDEff_EL3 = (
+        -0.85 * math.pow(math.log(bep_flow_corr), 2)
+        - 0.38 * math.log(specificSpeed) * math.log(bep_flow_corr)
+        - 11.48 * math.pow(math.log(specificSpeed), 2)
+        + 17.80 * math.log(bep_flow_corr)
+        + 179.80 * math.log(specificSpeed)
+        - (C_factor_EL3 + 555.6)
+    ) / 100
+    STDEff_EL4 = (
+        -0.85 * math.pow(math.log(bep_flow_corr), 2)
+        - 0.38 * math.log(specificSpeed) * math.log(bep_flow_corr)
+        - 11.48 * math.pow(math.log(specificSpeed), 2)
+        + 17.80 * math.log(bep_flow_corr)
+        + 179.80 * math.log(specificSpeed)
+        - (C_factor_EL4 + 555.6)
+    ) / 100
+    STDEff_EL5 = (
+        -0.85 * math.pow(math.log(bep_flow_corr), 2)
+        - 0.38 * math.log(specificSpeed) * math.log(bep_flow_corr)
+        - 11.48 * math.pow(math.log(specificSpeed), 2)
+        + 17.80 * math.log(bep_flow_corr)
+        + 179.80 * math.log(specificSpeed)
+        - (C_factor_EL5 + 555.6)
+    ) / 100
+
+    partLoadLossBEP = motorLossFull * yi(bep_power_corr, motorHP)
+    partLoadLoss75 = motorLossFull * yi(power_75_corr, motorHP)
+    partLoadLoss110 = motorLossFull * yi(power_110_corr, motorHP)
+
+    motorLossBEP_EL2 = motorLossFull * yi(hydrobep_power / STDEff_EL2, motorHP)
+    motorLoss75_EL2 = motorLossFull * yi(hydropower_75 / (STDEff_EL2 * 0.95), motorHP)
+    motorLoss110_EL2 = motorLossFull * yi(hydropower_110 / (STDEff_EL2 * 0.985), motorHP)
+    
+    motorLossBEP_EL3 = motorLossFull * yi(hydrobep_power / STDEff_EL3, motorHP)
+    motorLoss75_EL3 = motorLossFull * yi(hydropower_75 / (STDEff_EL3 * 0.95), motorHP)
+    motorLoss110_EL3 = motorLossFull * yi(hydropower_110 / (STDEff_EL3 * 0.985), motorHP)
+    
+    motorLossBEP_EL4 = motorLossFull * yi(hydrobep_power / STDEff_EL4, motorHP)
+    motorLoss75_EL4 = motorLossFull * yi(hydropower_75 / (STDEff_EL4 * 0.95), motorHP)
+    motorLoss110_EL4 = motorLossFull * yi(hydropower_110 / (STDEff_EL4 * 0.985), motorHP)
+    
+    motorLossBEP_EL5 = motorLossFull * yi(hydrobep_power / STDEff_EL5, motorHP)
+    motorLoss75_EL5 = motorLossFull * yi(hydropower_75 / (STDEff_EL5 * 0.95), motorHP)
+    motorLoss110_EL5 = motorLossFull * yi(hydropower_110 / (STDEff_EL5 * 0.985), motorHP)
+
+    if test_type == "BP":
+        drive_input_power_75 = power_75_corr + partLoadLoss75
+        drive_input_power_bep = bep_power_corr + partLoadLossBEP
+        drive_input_power_110 = power_110_corr + partLoadLoss110
+
+    elif test_type == "PM":
+        drive_input_power_75 = power_75_corr
+        drive_input_power_bep = bep_power_corr
+        drive_input_power_110 = power_110_corr
+        bep_power_corr = drive_input_power_bep - partLoadLossBEP
+
+    else:
+        return {"status": "fail", "reason": "Test type unrecognized"}
+
+    PERstd_EL2 = (
+        (hydropower_75 / (0.95 * STDEff_EL2) + motorLoss75_EL2) / 3
+        + (hydrobep_power / STDEff_EL2 + motorLossBEP_EL2) / 3
+        + (hydropower_110 / (0.985 * STDEff_EL2) + motorLoss110_EL2) / 3
+    )
+    PERstd_EL3 = (
+        (hydropower_75 / (0.95 * STDEff_EL3) + motorLoss75_EL3) / 3
+        + (hydrobep_power / STDEff_EL3 + motorLossBEP_EL3) / 3
+        + (hydropower_110 / (0.985 * STDEff_EL3) + motorLoss110_EL3) / 3
+    )
+    PERstd_EL4 = (
+        (hydropower_75 / (0.95 * STDEff_EL4) + motorLoss75_EL4) / 3
+        + (hydrobep_power / STDEff_EL4 + motorLossBEP_EL4) / 3
+        + (hydropower_110 / (0.985 * STDEff_EL4) + motorLoss110_EL4) / 3
+    )
+    PERstd_EL5 = (
+        (hydropower_75 / (0.95 * STDEff_EL5) + motorLoss75_EL5) / 3
+        + (hydrobep_power / STDEff_EL5 + motorLossBEP_EL5) / 3
+        + (hydropower_110 / (0.985 * STDEff_EL5) + motorLoss110_EL5) / 3
+    )
+    PERcl = (
+        (drive_input_power_75) / 3
+        + (drive_input_power_bep) / 3
+        + (drive_input_power_110) / 3
+    )
+    PEIcl_EL2 = PERcl / PERstd_EL2
+    PEIcl_EL3 = PERcl / PERstd_EL3
+    PEIcl_EL4 = PERcl / PERstd_EL4
+    PEIcl_EL5 = PERcl / PERstd_EL5
+
+    flow_25_corr = 0.25 * bep_flow_corr
+    flow_50_corr = 0.5 * bep_flow_corr
+    pump_input_power_25 = (
+        0.80 * math.pow(flow_25_corr / bep_flow_corr, 3)
+        + 0.20 * (flow_25_corr / bep_flow_corr)
+    ) * bep_power_corr
+    pump_input_power_50 = (
+        0.80 * math.pow(flow_50_corr / bep_flow_corr, 3)
+        + 0.20 * (flow_50_corr / bep_flow_corr)
+    ) * bep_power_corr
+    pump_input_power_75 = (
+        0.80 * math.pow(flow_75_corr / bep_flow_corr, 3)
+        + 0.20 * (flow_75_corr / bep_flow_corr)
+    ) * bep_power_corr
+
+    z_25 = zi(pump_input_power_25, motorHP)
+    z_50 = zi(pump_input_power_50, motorHP)
+    z_75 = zi(pump_input_power_75, motorHP)
+    z_bep = zi(bep_power_corr, motorHP)
+
+    motor_controller_loss_25 = motorLossFull * z_25
+    motor_controller_loss_50 = motorLossFull * z_50
+    motor_controller_loss_75 = motorLossFull * z_75
+    motor_controller_loss_bep = motorLossFull * z_bep
+
+    controller_input_power_25 = pump_input_power_25 + motor_controller_loss_25
+    controller_input_power_50 = pump_input_power_50 + motor_controller_loss_50
+    controller_input_power_75 = pump_input_power_75 + motor_controller_loss_75
+    controller_input_power_bep = bep_power_corr + motor_controller_loss_bep
+
+    PERvl = (
+        0.25 * controller_input_power_25
+        + 0.25 * controller_input_power_50
+        + 0.25 * controller_input_power_75
+        + 0.25 * controller_input_power_bep
+    )
+    PEIvl_EL2 = PERvl / PERstd_EL2
+    PEIvl_EL3 = PERvl / PERstd_EL3
+    PEIvl_EL4 = PERvl / PERstd_EL4
+    PEIvl_EL5 = PERvl / PERstd_EL5
+
+    return {
+        "status": "success",
+        "PEIcl_EL2": PEIcl_EL2,
+        "PEIvl_EL2": PEIvl_EL2,
+        "PEIcl_EL3": PEIcl_EL3,
+        "PEIvl_EL3": PEIvl_EL3,
+        "PEIcl_EL4": PEIcl_EL4,
+        "PEIvl_EL4": PEIvl_EL4,
+        "PEIcl_EL5": PEIcl_EL5,
+        "PEIvl_EL5": PEIvl_EL5,
+        "flow_bep": bep_flow_corr,
+        "head_75": head_75_corr,
+        "head_bep": bep_head_corr,
+        "head_110": head_110_corr,
+        "power_75": drive_input_power_75,
+        "power_bep": drive_input_power_bep,
+        "power_110": drive_input_power_110,
+        "controller_power_25": controller_input_power_25,
+        "controller_power_50": controller_input_power_50,
+        "controller_power_75": controller_input_power_75,
+        "controller_power_bep": controller_input_power_bep,
+        "motor_hp": motorHP,
+        "motor_eff": motorEfficiency,
+        "c_factor_EL2": C_factor_EL2,
+        "c_factor_EL3": C_factor_EL3,
+        "c_factor_EL4": C_factor_EL4,
+        "c_factor_EL5": C_factor_EL5,
+        "PERcl": PERcl,
+        "PERvl": PERvl
     }
 
 def calculateCirculatorPEI(

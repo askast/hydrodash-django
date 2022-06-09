@@ -14,10 +14,12 @@ import matplotlib.pyplot as plt
 from matplotlib import lines
 from matplotlib.cbook import get_sample_data
 import matplotlib.tri as tri
-from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import InterpolatedUnivariateSpline, griddata, Rbf
 import csv
 import random
 import string
+import alphashape
+from descartes import PolygonPatch
 
 from django.http import JsonResponse
 from django.views.generic.base import TemplateView
@@ -110,7 +112,7 @@ class PumpListView(TemplateView):
                             ] = False
 
                         for trim, peis in trims.items():
-                            if peis[0] is "fail":
+                            if peis[0] == "fail":
                                 nested_trims[series][pumpmodel][design][
                                     "hasalldata"
                                 ] = False
@@ -763,6 +765,7 @@ def createSubmittalCurves(request):
     )
 
     fheadsmall = InterpolatedUnivariateSpline(plot_flows[0], plot_heads[0])
+    fheadlarge = InterpolatedUnivariateSpline(plot_flows[-1], plot_heads[-1])
     # Mask off unwanted triangles.
     xmid = np.array(flowpoints_for_eff_contour)[triang_eff.triangles].mean(axis=1)
     ymid = np.array(headpoints_for_eff_contour)[triang_eff.triangles].mean(axis=1)
@@ -771,8 +774,39 @@ def createSubmittalCurves(request):
     
     
     if tri_smoothing:
+        # xi = np.linspace(0, max(flowpoints_for_eff_contour), 100)
+        # yi = np.linspace(0, max(headpoints_for_eff_contour), 100)
+        # xxi, yyi = np.meshgrid(xi, yi)
+        # rbf = Rbf(flowpoints_for_eff_contour, headpoints_for_eff_contour, effpoints_for_eff_contour, function='cubic')
+        # zi = rbf(xxi, yyi)
+
+        # points = [i for i in zip(plot_flows[0]+plot_flows[-1], plot_heads[0]+plot_heads[-1])]
+        # alpha = 0.95 * alphashape.optimizealpha(points)
+        # hull = alphashape.alphashape(points, alpha)
+
+
+        # mask = np.zeros_like(zi, dtype=bool)
+        # for j, y in enumerate(yi):
+        #     for i, x in enumerate(xi):
+        #         if y < fheadsmall(x) or y > fheadlarge(x):
+        #             mask[j,i] = True
+        #         else:
+        #             mask[j,i] = False
+        # print(mask)
+
+        # ax_ft.contour(
+        #     xxi,
+        #     yyi,
+        #     zi,
+        #     levels=eff_levels,
+        #     colors="k",
+        #     linewidths=0.5
+        # )
+        # ax_ft.add_patch(PolygonPatch(hull, alpha=alpha))
+
+
         refiner = tri.UniformTriRefiner(triang_eff)
-        tri_refi, z_test_refi = refiner.refine_field(effpoints_for_eff_contour, subdiv=6)
+        tri_refi, z_test_refi = refiner.refine_field(effpoints_for_eff_contour, subdiv=4)
         ax_ft.tricontour(
             tri_refi,
             z_test_refi,
@@ -969,7 +1003,6 @@ def createSubmittalCurves(request):
     for plot_flow, plot_head in zip(plot_flows, plot_heads):
         ax_ft.plot(plot_flow, plot_head, "--", color="k", linewidth=0.5)
 
-    fig.patch.set_facecolor("xkcd:mint green")
 
     name = f"{series}{pumpmodel}{design}_{rpm}RPM"
     plt.savefig(
