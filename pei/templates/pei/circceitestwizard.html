@@ -36,15 +36,15 @@
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1> Circulator PEI</h1>
+            <h1> Circulator CEI</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
-                <div class="breadcrumb-item"><a href="#">PEI Calculator</a></div>
+                <div class="breadcrumb-item"><a href="#">CEI Calculator</a></div>
             </div>
         </div>
 
         <div class="section-body">
-            <h2 class="section-title">Circulator PEI Test Wizard</h2>
+            <h2 class="section-title">Circulator CEI Test Wizard</h2>
             <div class="row">
                 <div class="col-12">
                     <div class="card">
@@ -76,7 +76,7 @@
                                                 <i class="fas fa-database"></i>
                                             </div>
                                             <div class="wizard-step-label">
-                                                Circulator PEI
+                                                Circulator CEI
                                             </div>
                                         </div>
                                     </div>
@@ -97,8 +97,8 @@
                                             <th>BEP Flow</th>
                                             <th>BEP Head</th>
                                             <th>BEP Efficiency</th>
-                                            <th>PEIcl</th>
-                                            <th>PEIvl</th>
+                                            <th>CEIcl</th>
+                                            <th>CEIvl</th>
                                             <th>Pump Type</th>
                                             <th>Impeller Diameter</th>
                                             <th>Full Trim</th>
@@ -175,7 +175,7 @@
         table1.on('dblclick', 'tr', function () {
             var id = (table1.row(this).data())[0]
             console.log(id);
-            window.location = "{% url 'peiwizard2' %}?testid=" + id;
+            window.location = "{% url 'ceiwizard2' %}?testid=" + id;
         });
     });
 </script>

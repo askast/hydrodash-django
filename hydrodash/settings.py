@@ -32,7 +32,7 @@ SECRET_KEY = "2fq09bty#s=5$s1j#ez9sng32i9)f6hq!*n5nz23*-+fu$$epo"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ["hydrodash", "hydrodash.taco.corp", "127.0.0.1", "localhost"]
+# ALLOWED_HOSTS = ["hydrodash", "hydrodash.taco.corp", "127.0.0.1", "localhost", "10.15.0.30"]
 ALLOWED_HOSTS = ['*']
 
 

@@ -57,9 +57,9 @@ def context(request):
             ],
             "PEI": [
                 {
-                    "url": "/pei/peiwizard",
+                    "url": "/pei/ceiwizard",
                     "icon": "fas fa-hat-wizard",
-                    "name": "PEI Wizard",
+                    "name": "CEI Wizard",
                 },
                 {
                     "url": "/pei/peicalculator",

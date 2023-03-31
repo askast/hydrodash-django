@@ -9,7 +9,7 @@ from numpy.polynomial.polynomial import Polynomial
 from scipy import interpolate
 from scipy.optimize import minimize_scalar
 
-from .utils import calculateCirculatorPEI
+from .utils import calculateCirculatorCEI
 # from profiles.models import Profile
 from testdata.models import ReducedPumpTestDetails, ReducedPumpTestData
 
@@ -30,7 +30,7 @@ class PeiCalcuatorView(TemplateView):
         return context
 
 
-def calculatePei(request):
+def calculateCei(request):
     bep_flow = float(request.POST.get("bep_flow", None))
     bep_head = float(request.POST.get("bep_head", None))
     q_25_max = float(request.POST.get("q_25_max", None))
@@ -54,11 +54,11 @@ def calculatePei(request):
     p_75_reduced_test = float(request.POST.get("p_75_reduced_test", None))
     p_100_reduced_test = float(request.POST.get("p_100_reduced_test", None))
 
-    result = calculateCirculatorPEI(bep_flow, bep_head, q_25_max, q_50_max, q_75_max, q_100_max, h_25_max, h_50_max, h_75_max, h_100_max, 0, 0, 0, 0, q_25_reduced_test, q_50_reduced_test, q_75_reduced_test, q_100_reduced_test, h_25_reduced_test, h_50_reduced_test, h_75_reduced_test, h_100_reduced_test, p_25_reduced_test, p_50_reduced_test, p_75_reduced_test, p_100_reduced_test)
+    result = calculateCirculatorCEI(bep_flow, bep_head, q_25_max, q_50_max, q_75_max, q_100_max, h_25_max, h_50_max, h_75_max, h_100_max, 0, 0, 0, 0, q_25_reduced_test, q_50_reduced_test, q_75_reduced_test, q_100_reduced_test, h_25_reduced_test, h_50_reduced_test, h_75_reduced_test, h_100_reduced_test, p_25_reduced_test, p_50_reduced_test, p_75_reduced_test, p_100_reduced_test)
 
     context = {
         "status" : result["status"],
-        "pei" : result["PEI"],
+        "cei" : result["CEI"],
         "er" : result["ER"],
     }
 
@@ -66,8 +66,8 @@ def calculatePei(request):
 
 
 
-class CirculatorPeiTestListView(TemplateView):
-    template_name = "pei/circpeitestwizard.html"
+class CirculatorCeiTestListView(TemplateView):
+    template_name = "pei/circceitestwizard.html"
 
     def get_context_data(self, **kwargs):
         context = {
@@ -75,13 +75,13 @@ class CirculatorPeiTestListView(TemplateView):
             "servername": os.environ.get("USERNAME"),
             "title1": "Hydro Dash",
             "activedropdown": "",
-            "activename": "PEI Wizard",
+            "activename": "CEI Wizard",
         }
         return context
 
 
-class CirculatorPeiTest2View(TemplateView):
-    template_name = "pei/circpeitestwizard2.html"
+class CirculatorCeiTest2View(TemplateView):
+    template_name = "pei/circceitestwizard2.html"
 
     def get_context_data(self, **kwargs):
         testid = self.request.GET.get('testid', None)
@@ -93,15 +93,15 @@ class CirculatorPeiTest2View(TemplateView):
             "servername": os.environ.get("USERNAME"),
             "title1": "Hydro Dash",
             "activedropdown": "",
-            "activename": "PEI Wizard",
+            "activename": "CEI Wizard",
             "testid": testid,
             "testname": testname,
         }
         return context
 
 
-class CirculatorPeiTest3View(TemplateView):
-    template_name = "pei/circpeitestwizard3.html"
+class CirculatorCeiTest3View(TemplateView):
+    template_name = "pei/circceitestwizard3.html"
 
     def get_context_data(self, **kwargs):
         test1id = self.request.GET.get('test1id', None)
@@ -116,7 +116,7 @@ class CirculatorPeiTest3View(TemplateView):
             "servername": os.environ.get("USERNAME"),
             "title1": "Hydro Dash",
             "activedropdown": "",
-            "activename": "PEI Wizard",
+            "activename": "CEI Wizard",
             "test1id": test1id,
             "test1name": test1name,
             "test2id": test2id,
@@ -125,7 +125,7 @@ class CirculatorPeiTest3View(TemplateView):
         return context
 
 
-def circPeiPointsToTest(request):
+def circCeiPointsToTest(request):
     flowunitconversionfactor = 4.402862
     headunitconversionfactor = 3.28084
 
@@ -189,7 +189,7 @@ def circPeiPointsToTest(request):
     return JsonResponse(context)
 
 
-def circPeiData(request):
+def circCeiData(request):
     flowunitconversionfactor = 4.402862
     headunitconversionfactor = 3.28084
     powerunitconversionfactor = 1.34102
@@ -324,35 +324,29 @@ def circPeiData(request):
     approved_test2_head = []
     approved_test2_flow = []
     approved_test2_power = []
-    if test2_head_25 > 0.9*head_25:
+    if any(head_item >= .25*bep_head for head_item in [test2_head_25, test2_head_50, test2_head_75, test2_head_bep]):
         approved_test2_head.append(test2_head_25)
         approved_test2_flow.append(test2_flow_25)
         approved_test2_power.append(test2_power_25)
-    else:
-        approved_test2_head.append(None)
-        approved_test2_flow.append(None)
-        approved_test2_power.append(None)
-    if test2_head_50 > 0.2*head_50:
         approved_test2_head.append(test2_head_50)
         approved_test2_flow.append(test2_flow_50)
         approved_test2_power.append(test2_power_50)
-    else:
-        approved_test2_head.append(None)
-        approved_test2_flow.append(None)
-        approved_test2_power.append(None)
-    if test2_head_75 > 0.2*head_75:
         approved_test2_head.append(test2_head_75)
         approved_test2_flow.append(test2_flow_75)
         approved_test2_power.append(test2_power_75)
-    else:
-        approved_test2_head.append(None)
-        approved_test2_flow.append(None)
-        approved_test2_power.append(None)
-    if test2_head_bep > 0.2*bep_head:
         approved_test2_head.append(test2_head_bep)
         approved_test2_flow.append(test2_flow_bep)
         approved_test2_power.append(test2_power_bep)
     else:
+        approved_test2_head.append(None)
+        approved_test2_flow.append(None)
+        approved_test2_power.append(None)
+        approved_test2_head.append(None)
+        approved_test2_flow.append(None)
+        approved_test2_power.append(None)
+        approved_test2_head.append(None)
+        approved_test2_flow.append(None)
+        approved_test2_power.append(None)
         approved_test2_head.append(None)
         approved_test2_flow.append(None)
         approved_test2_power.append(None)
@@ -368,15 +362,15 @@ def circPeiData(request):
     test1_power_75 = power_poly(flow_75)
     test1_power_110 = power_poly(flow_110)
     
-
+    print(f'approved_test2_flow={approved_test2_flow}')
     if None not in approved_test2_flow:
-        PEI_result = calculateCirculatorPEI(bep_flow, bep_head, flow_25, flow_50, flow_75, bep_flow,
+        CEI_result = calculateCirculatorCEI(bep_flow, bep_head, flow_25, flow_50, flow_75, bep_flow,
             test1_head_25, test1_head_50, test1_head_75, bep_head, 
             test1_power_25, test1_power_50, test1_power_75, bep_power, 
             test2_flow_25, test2_flow_50, test2_flow_75, test2_flow_bep, 
             test2_head_25, test2_head_50, test2_head_75, test2_head_bep,
             test2_power_25, test2_power_50, test2_power_75, test2_power_bep)
-        
+        print(f'CEI_result={CEI_result}')
         calculator_spreadsheet_input_csv.extend([bep_flow, bep_head, power_poly(bep_flow)])
         calculator_spreadsheet_input_csv.extend([0.1*bep_flow, .25*bep_flow, .4*bep_flow, .6*bep_flow, .75*bep_flow, .9*bep_flow, bep_flow, 1.1*bep_flow, 1.2*bep_flow])
         calculator_spreadsheet_input_csv.extend([head_poly(0.1*bep_flow), head_poly(.25*bep_flow), head_poly(.4*bep_flow), head_poly(.6*bep_flow), head_poly(.75*bep_flow), head_poly(.9*bep_flow), bep_head, head_poly(1.1*bep_flow), head_poly(1.2*bep_flow)])
@@ -394,12 +388,12 @@ def circPeiData(request):
 
         upload_spreadsheet_input_csv.extend(["Taco", "", test1name, test1name, "", "CP1", 109, "yes", "yes", "no", "no", "no", "no", "Pressure Control", "No speed control"])
         upload_spreadsheet_input_csv.extend([head_poly_reduced_string, head_poly_string])
-        upload_spreadsheet_input_csv.extend([PEI_result["P_in_25"], PEI_result["P_in_50"], PEI_result["P_in_75"], PEI_result["P_in_100"]])
+        upload_spreadsheet_input_csv.extend([CEI_result["P_in_25"], CEI_result["P_in_50"], CEI_result["P_in_75"], CEI_result["P_in_100"]])
         upload_spreadsheet_input_csv.extend(["", ""])
         upload_spreadsheet_input_csv.extend([test1_power_25, test1_power_50, test1_power_75, bep_power])
         upload_spreadsheet_input_csv.extend(["", ""])
         upload_spreadsheet_input_csv.extend([test1_head_25, test1_head_50, test1_head_75, bep_head])
-        upload_spreadsheet_input_csv.extend([bep_flow, PEI_result["PEI"], PEI_result["PEI_most_consumptive"]])
+        upload_spreadsheet_input_csv.extend([bep_flow, CEI_result["CEI"], CEI_result["CEI_most_consumptive"]])
 
         doe_spreadsheet_input_csv.extend(["", "Taco", test1name, "CP1", "ECM", "", "", "", "", "", ""])
         doe_spreadsheet_input_csv.extend([bep_flow, bep_head, "", bep_power*745.699872, bep_flow*bep_head/(3960*bep_power)])
@@ -413,39 +407,13 @@ def circPeiData(request):
         doe_spreadsheet_input_csv.extend([test2_flow_75, test2_head_75, "", test2_power_75*745.699872, test2_flow_75*test2_head_75/(3960*test2_power_75)])
 
     else:
-        PEI_result = {
+        CEI_result = {
             "status": "failed",
-            "PEI": 0,
+            "CEI": 0,
             "ER": 0,
-            "PEI_most_consumptive": 0,
+            "CEI_most_consumptive": 0,
             "ER_most_consumptive": 0,
         }
-        calculator_spreadsheet_input_csv.extend([bep_flow, bep_head, power_poly(bep_flow)])
-        calculator_spreadsheet_input_csv.extend([0.1*bep_flow, .25*bep_flow, .4*bep_flow, .6*bep_flow, .75*bep_flow, .9*bep_flow, bep_flow, 1.1*bep_flow, 1.2*bep_flow])
-        calculator_spreadsheet_input_csv.extend([head_poly(0.1*bep_flow), head_poly(.25*bep_flow), head_poly(.4*bep_flow), head_poly(.6*bep_flow), head_poly(.75*bep_flow), head_poly(.9*bep_flow), bep_head, head_poly(1.1*bep_flow), head_poly(1.2*bep_flow)])
-        calculator_spreadsheet_input_csv.extend([power_poly(0.1*bep_flow), power_poly(.25*bep_flow), power_poly(.4*bep_flow), power_poly(.6*bep_flow), power_poly(.75*bep_flow), power_poly(.9*bep_flow), bep_power, power_poly(1.1*bep_flow), power_poly(1.2*bep_flow)])
-        calculator_spreadsheet_input_csv.extend([test2_flow_25, test2_flow_50, test2_flow_75])
-        calculator_spreadsheet_input_csv.extend([test2_head_25, test2_head_50, test2_head_75])
-        calculator_spreadsheet_input_csv.extend([test2_power_25, test2_power_50, test2_power_75])
-
-        upload_spreadsheet_input_csv.extend(["Taco", "", test1name, test1name, "", "CP1", 109, "yes", "yes", "no", "no", "no", "no", "Pressure Control", "No speed control"])
-        upload_spreadsheet_input_csv.extend([head_poly_reduced_string, head_poly_string])
-        upload_spreadsheet_input_csv.extend([PEI_result["P_in_25"], PEI_result["P_in_50"], PEI_result["P_in_75"], PEI_result["P_in_100"]])
-        upload_spreadsheet_input_csv.extend(["", ""])
-        upload_spreadsheet_input_csv.extend([test1_power_25, test1_power_50, test1_power_75, bep_power])
-        upload_spreadsheet_input_csv.extend(["", ""])
-        upload_spreadsheet_input_csv.extend([test1_head_25, test1_head_50, test1_head_75, bep_head])
-    
-        doe_spreadsheet_input_csv.extend(["", "Taco", test1name, "CP1", "ECM", "", "", "", "", "", ""])
-        doe_spreadsheet_input_csv.extend([bep_flow, bep_head, "", bep_power*745.699872, bep_flow*bep_head/(3960*bep_power)])
-        doe_spreadsheet_input_csv.extend([flow_25, test1_head_25, "", test1_power_25*745.699872, flow_25*test1_head_25/(3960*test1_power_25)])
-        doe_spreadsheet_input_csv.extend([flow_50, test1_head_50, "", test1_power_50*745.699872, flow_50*test1_head_50/(3960*test1_power_50)])
-        doe_spreadsheet_input_csv.extend([flow_75, test1_head_75, "", test1_power_75*745.699872, flow_75*test1_head_75/(3960*test1_power_75)])
-        doe_spreadsheet_input_csv.extend([flow_110, test1_head_110, "", test1_power_110*745.699872, flow_110*test1_head_110/(3960*test1_power_110)])
-        doe_spreadsheet_input_csv.extend(["", "", "", "", ""])
-        doe_spreadsheet_input_csv.extend([test2_flow_25, test2_head_25, "", test2_power_25*745.699872, test2_flow_25*test2_head_25/(3960*test2_power_25)])
-        doe_spreadsheet_input_csv.extend([test2_flow_50, test2_head_50, "", test2_power_50*745.699872, test2_flow_50*test2_head_50/(3960*test2_power_50)])
-        doe_spreadsheet_input_csv.extend([test2_flow_75, test2_head_75, "", test2_power_75*745.699872, test2_flow_75*test2_head_75/(3960*test2_power_75)])
     
     test2_flow_red = []
     test2_head_red = []
@@ -474,7 +442,7 @@ def circPeiData(request):
         "test2headgreen": test2_head_green,
         "test2flowred": test2_flow_red,
         "test2headred": test2_head_red,
-        "peiresult": PEI_result,
+        "ceiresult": CEI_result,
         "calculator_csv_input": ",".join(map(str, calculator_spreadsheet_input_csv)),
         "upload_csv_input": ",".join(map(str, upload_spreadsheet_input_csv)),
         "doe_survey_csv_input": ",".join(map(str, doe_spreadsheet_input_csv)),

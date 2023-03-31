@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
-from .views import PeiCalcuatorView, calculatePei, CirculatorPeiTestListView, CirculatorPeiTest2View, CirculatorPeiTest3View, circPeiPointsToTest, circPeiData
+from .views import PeiCalcuatorView, calculateCei, CirculatorCeiTestListView, CirculatorCeiTest2View, CirculatorCeiTest3View, circCeiPointsToTest, circCeiData
 
 urlpatterns = [
     path(
@@ -9,33 +9,33 @@ urlpatterns = [
         name="peicalculator",
     ),
     path(
-        "peiwizard",
-        login_required(CirculatorPeiTestListView.as_view()),
-        name="peiwizard",
+        "ceiwizard",
+        login_required(CirculatorCeiTestListView.as_view()),
+        name="ceiwizard",
     ),
     path(
-        "peiwizard2",
-        login_required(CirculatorPeiTest2View.as_view()),
-        name="peiwizard2",
+        "ceiwizard2",
+        login_required(CirculatorCeiTest2View.as_view()),
+        name="ceiwizard2",
     ),
     path(
-        "peiwizard3",
-        login_required(CirculatorPeiTest3View.as_view()),
-        name="peiwizard3",
+        "ceiwizard3",
+        login_required(CirculatorCeiTest3View.as_view()),
+        name="ceiwizard3",
     ),
     path(
-        "getcircpei",
-        login_required(calculatePei),
-        name="getcircpei",
+        "getcirccei",
+        login_required(calculateCei),
+        name="getcirccei",
     ),
     path(
-        "circpeipointstotest",
-        login_required(circPeiPointsToTest),
-        name="circpeipointstotest",
+        "circceipointstotest",
+        login_required(circCeiPointsToTest),
+        name="circceipointstotest",
     ),
     path(
-        "circpeidata",
-        login_required(circPeiData),
-        name="circpeidata",
+        "circceidata",
+        login_required(circCeiData),
+        name="circceidata",
     ),
 ]

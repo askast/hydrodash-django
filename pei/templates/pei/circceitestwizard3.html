@@ -36,15 +36,15 @@
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1> Circulator PEI</h1>
+            <h1> Circulator CEI</h1>
             <div class="section-header-breadcrumb">
                 <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
-                <div class="breadcrumb-item"><a href="#">PEI Calculator</a></div>
+                <div class="breadcrumb-item"><a href="#">CEI Calculator</a></div>
             </div>
         </div>
 
         <div class="section-body">
-            <h2 class="section-title">Circulator PEI Test Wizard</h2>
+            <h2 class="section-title">Circulator CEI Test Wizard</h2>
             <div class="row">
                 <div class="col-12">
                     <div class="card">
@@ -63,7 +63,7 @@
                                                 Select Max Speed Curve
                                             </div>
                                         </div>
-                                        <div class="wizard-step wizard-step-active">
+                                        <div class="wizard-step">
                                             <div class="wizard-step-icon">
                                                 <i class="fas fa-tasks"></i>
                                             </div>
@@ -71,12 +71,12 @@
                                                 Reduced Speed Points to Test
                                             </div>
                                         </div>
-                                        <div class="wizard-step">
+                                        <div class="wizard-step wizard-step-active">
                                             <div class="wizard-step-icon">
                                                 <i class="fas fa-database"></i>
                                             </div>
                                             <div class="wizard-step-label">
-                                                Circulator PEI
+                                                Circulator CEI
                                             </div>
                                         </div>
                                     </div>
@@ -101,49 +101,49 @@
                                         <div class="col-6 col-md-6 col-lg-6">
                                             <div class="card">
                                                 <div class="card-header">
-                                                    <h4>Points to Test at Reduced Speed</h4>
+                                                    <h4>CEI Calculator result</h4>
                                                 </div>
                                                 <div class="card-body">
-                                                    <table class="table table-hover responsive" id="table2">
-                                                        <thead>
-                                                            <th>Flow (GPM)</th>
-                                                            <th>Head (FT) Use only for manual control</th>
-                                                        </thead>
-                                                        <tbody></tbody>                                                    
+                                                    <table class="table table-hover responsive" id="table1">                                                 
                                                     </table>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row mt-4">
-                                        <div class="col-12 col-md-12 col-lg-12">
+                                        <div class="col-12 col-md-6 col-lg-6">
                                             <div class="card">
                                                 <div class="card-header">
-                                                    <h4>Select Reduced Speed Test</h4>
+                                                    <h4>HI Upload Speadsheet Input</h4>
                                                 </div>
-                                                <div class="card-body">
-                                                    <table class="table table-hover responsive" id="table1">
-                                                        <thead>
-                                                            <th>ID</th>
-                                                            <th>Test Date</th>
-                                                            <th>Test Name</th>
-                                                            <th>Test Engineer</th>
-                                                            <th>Test Loop</th>
-                                                            <th>Discharge Pipe Size</th>
-                                                            <th>Inlet Pipe Size</th>
-                                                            <th>BEP Flow</th>
-                                                            <th>BEP Head</th>
-                                                            <th>BEP Efficiency</th>
-                                                            <th>PEIcl</th>
-                                                            <th>PEIvl</th>
-                                                            <th>Pump Type</th>
-                                                            <th>Impeller Diameter</th>
-                                                            <th>Full Trim</th>
-                                                            <th>Bearing Frame</th>
-                                                            <th>Data Sources</th>
-                                                            <th>Description</th>
-                                                        </thead>
-                                                    </table>
+                                                <div class="card-body" id="upload_text">
+                                                </div>
+                                                <div class="card-footer text-right">
+                                                    <button class="btn btn-primary" id='upload_btn'>Copy</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>HI Calculator Speadsheet Input</h4>
+                                                </div>
+                                                <div class="card-body" id="calc_text">
+                                                </div>
+                                                <div class="card-footer text-right">
+                                                    <button class="btn btn-primary" id='calc_btn'>Copy</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h4>DOE Survey Speadsheet Input</h4>
+                                                </div>
+                                                <div class="card-body" id="doe_survey_text">
+                                                </div>
+                                                <div class="card-footer text-right">
+                                                    <button class="btn btn-primary" id='doe_survey_btn'>Copy</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -159,66 +159,35 @@
 </div>
 
 <script>
+    var upload_copy_text = "";
+    var calc_copy_text = "";
+    var doe_survey_copy_text = "";
+    function copyToClipboard(text) {
+        var $temp = $("<input>");
+        $("body").append($temp);
+        $temp.val(text).select();
+        document.execCommand("copy");
+        $temp.remove();
+    }
     $(document).ready(function () {
-        var REFERENCE = moment(); // fixed just for testing, use moment();
-        var TODAY = REFERENCE.clone().startOf('day');
-
-        function isToday(momentDate) {
-            return momentDate.isSame(TODAY, 'd');
-        }
-
-        var table1 = $('#table1').DataTable({
-            autoWidth: false,
-            select: {
-                style: 'single'
-            },
-            order: [
-                [0, "desc"]
-            ],
-            columnDefs: [{
-                    className: "text-center",
-                    targets: [0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                },
-                {
-                    targets: 1,
-                    render: function (data) {
-                        return (isToday(moment(data))) ?
-                            moment(data).tz("America/Toronto").format("h:mm a") : moment(data)
-                            .tz("America/Toronto").format("MMM Do, YYYY");
-                    }
-                },
-                {
-                    targets: [5, 6, 7, 8, 9, 10, 11],
-                    render: function (data) {
-                        if (data == null)
-                            return null
-                        else
-                            return parseFloat(data).toFixed(2);
-                    }
-                },
-                {
-                    render: function (data, type, row, ) {
-                        return (data === true) ?
-                            data = '<span class="true">✔</span>' :
-                            data = '<span class="false">✘</span>';
-                    },
-                    targets: 14
-                }
-            ],
-            responsive: true,
-            searching: true,
-            processing: true,
-            serverSide: true,
-            stateSave: true,
-            ajax: "{% url 'reducedtestlist-json' %}",
-        });
-
-        table1.on('dblclick', 'tr', function () {
-            var id = (table1.row(this).data())[0]
-            console.log(id);
-            window.location = "{% url 'peiwizard3' %}?test1id={{testid}}&test2id=" + id;
-        });
-
+        $("#calc_btn").click(
+            function(event) {
+                event.preventDefault();
+                copyToClipboard(calc_copy_text);
+            }
+        );
+        $("#upload_btn").click(
+            function(event) {
+                event.preventDefault();
+                copyToClipboard(upload_copy_text);
+            }
+        );
+        $("#doe_survey_btn").click(
+            function(event) {
+                event.preventDefault();
+                copyToClipboard(doe_survey_copy_text);
+            }
+        );
         var basechartoptions = {
             chart: {
                 zoomType: 'xy'
@@ -238,21 +207,37 @@
                 enabled: false
             },
             plotOptions: {},
-            series: [{
-                type: 'scatter',
-                marker: {
-                    fillColor: '#AF7AC5',
-                    radius: 8,
-                    symbol: 'diamond'
+            series: [
+                {
+                    type: 'scatter',
+                    marker: {
+                        fillColor: '#000000',
+                        radius: 3,
+                        symbol: 'circle'
+                    }
+                },{
+                    type: 'scatter',
+                    marker: {
+                        fillColor: '#AF7AC5',
+                        radius: 8,
+                        symbol: 'diamond'
+                    }
+                },{
+                    type: 'scatter',
+                    marker: {
+                        fillColor: '#48C9B0',
+                        radius: 3,
+                        symbol: 'square'
+                    }
+                },{
+                    type: 'scatter',
+                    marker: {
+                        fillColor: '#EC7063',
+                        radius: 3,
+                        symbol: 'circle'
+                    }
                 }
-            }, {
-                type: 'scatter',
-                marker: {
-                    fillColor: '#000000',
-                    radius: 3,
-                    symbol: 'circle'
-                }
-            }],
+            ],
             exporting: {
                 enabled: false
             }
@@ -260,22 +245,39 @@
 
         const pageUpdate = () => {
             $.getJSON(
-                "{% url 'circpeipointstotest' %}", {
-                    testid: parseInt("{{ testid }}")
+                "{% url 'circceidata' %}", {
+                    test1id: parseInt("{{ test1id }}"),
+                    test2id: parseInt("{{ test2id }}"),
                 }).done(function (data) {
-                    $("#test1id").text(data.testname);
-                    var chart1data = [];
-                    for (var i = 0; i < data.chartflow.length; i++) {
-                        chart1data.push([data.chartflow[i], data.charthead[i]]);
+                    $("#test1id").text(data.test1name);
+                    var test1data = [];
+                    for (var i = 0; i < data.test1flow.length; i++) {
+                        test1data.push([data.test1flow[i], data.test1head[i]]);
                     }
-                    var chart1testpts = [];
+                    var testpointsdata = [];
                     for (var i = 0; i < data.testpointsflow.length; i++) {
-                        chart1testpts.push([data.testpointsflow[i], data.testpointshead[i]]);
-                        $("#table2").find('tbody').append("<tr><td>"+data.testpointsflow[i].toFixed(2)+"</td><td>"+data.testpointshead[i].toFixed(2)+"</td></tr>");
+                        testpointsdata.push([data.testpointsflow[i], data.testpointshead[i]]);
                     }
+                    var test2greendata = [];
+                    for (var i = 0; i < data.test2flowgreen.length; i++) {
+                        test2greendata.push([data.test2flowgreen[i], data.test2headgreen[i]]);
+                    }
+                    var test2reddata = [];
+                    for (var i = 0; i < data.test2flowred.length; i++) {
+                        test2reddata.push([data.test2flowred[i], data.test2headred[i]]);
+                    }
+                    $("#table1").append("<tr><th colspan='2'>Least Consumptive</th></tr><tr><th>CEI</th><td>"+data.ceiresult["CEI"].toFixed(2)+"</td></tr><tr><th>ER</th><td>"+data.ceiresult["ER"].toFixed(0)+"</td></tr><tr><th colspan='2'>Most Consumptive</th></tr><tr><th>CEI</th><td>"+data.ceiresult["CEI_most_consumptive"].toFixed(2)+"</td></tr><tr><th>ER</th><td>"+data.ceiresult["ER_most_consumptive"].toFixed(0)+"</td></tr>");
 
-                    basechartoptions.series[1].data = chart1data;
-                    basechartoptions.series[0].data = chart1testpts;
+                    $("#upload_text").append(data.upload_csv_input);
+                    $("#calc_text").append(data.calculator_csv_input);
+                    $("#doe_survey_text").append(data.doe_survey_csv_input);
+                    upload_copy_text = data.upload_csv_input;
+                    calc_copy_text = data.calculator_csv_input;
+                    doe_survey_copy_text = data.doe_survey_csv_input;
+                    basechartoptions.series[0].data = test1data;
+                    basechartoptions.series[1].data = testpointsdata;
+                    basechartoptions.series[2].data = test2greendata;
+                    basechartoptions.series[3].data = test2reddata;
                     basechartoptions.xAxis.title = {
                         text: "GPM"
                     };

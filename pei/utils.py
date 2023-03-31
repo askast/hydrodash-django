@@ -186,6 +186,8 @@ def calculatePEI(
         95.0,
     ]
 
+    index = 0
+    motorHP = 0
     if motor_hp == 0:
         for index, motorHP in enumerate(motorHPs):
             if motorHP > power_120_corr:
@@ -491,6 +493,8 @@ def evaluatePEIrule(
         95.0,
     ]
 
+    motorHP = 0
+    index = 0
     if motor_hp == 0:
         for index, motorHP in enumerate(motorHPs):
             if motorHP > power_120_corr:
@@ -677,7 +681,7 @@ def evaluatePEIrule(
         "PERvl": PERvl
     }
 
-def calculateCirculatorPEI(
+def calculateCirculatorCEI(
         bep_flow,
         bep_head,
         q_25_max,
@@ -770,8 +774,8 @@ def calculateCirculatorPEI(
     per_circ = weight_25_reduced*p_25_reduced+weight_50_reduced*p_50_reduced+weight_75_reduced*p_75_reduced+weight_100_reduced*p_100_reduced
     per_circ_most_consumptive = weight_25_max*p_25_max+weight_50_max*p_50_max+weight_75_max*p_75_max+weight_100_max*p_100_max
 
-    pei_circ = per_circ/per_circ_ref
-    pei_circ_most_consumptive = per_circ_most_consumptive/per_circ_ref
+    cei_circ = per_circ/per_circ_ref
+    cei_circ_most_consumptive = per_circ_most_consumptive/per_circ_ref
 
     eta_wtw_baseline = 7.065*math.log(p_u_100+0.003958)+39.08
     p_25_baseline = p_u_25/(alpha_25_baseline*eta_wtw_baseline/100)
@@ -781,15 +785,15 @@ def calculateCirculatorPEI(
 
     per_circ_baseline = weight_25_max*p_25_baseline+weight_50_max*p_50_baseline+weight_75_max*p_75_baseline+weight_100_max*p_100_baseline
 
-    pei_circ_baseline = per_circ_baseline/per_circ_ref
+    cei_circ_baseline = per_circ_baseline/per_circ_ref
     
-    er_circ = (pei_circ_baseline-pei_circ)*100
-    er_circ_most_consumptive = (pei_circ_baseline-pei_circ_most_consumptive)*100
+    er_circ = (cei_circ_baseline-cei_circ)*100
+    er_circ_most_consumptive = (cei_circ_baseline-cei_circ_most_consumptive)*100
 
     return {
         "status": "success",
-        "PEI": pei_circ,
-        "PEI_most_consumptive": pei_circ_most_consumptive,
+        "CEI": cei_circ,
+        "CEI_most_consumptive": cei_circ_most_consumptive,
         "ER": er_circ,
         "ER_most_consumptive": er_circ_most_consumptive,
         "PER_circ_ref": per_circ_ref,
