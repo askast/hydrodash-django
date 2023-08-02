@@ -350,7 +350,7 @@ def testDataReducePlotData(request):
         tempfield = request.GET.get('tempfield', None)
         rpmfield = request.GET.get('rpmfield', None)
         stand = request.GET.get('stand', None)
-        cluster_coeff = request.GET.get('cluster', 0.05)
+        cluster_coeff = request.GET.get('cluster', 0.1)
 
         for testid in request.GET.get('rawtestids', None).split(','):
             testpath = RawTestsList.objects.filter(
