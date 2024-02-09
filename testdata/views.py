@@ -36,7 +36,7 @@ class TestListView(TemplateView):
         path = 'Nothing'
         if (self.request.GET.get('refresh', None)):
             path = '/mnt/udrive/Lab/Test-Data/FMCommPumpEffPerfomanceTest'
-            comm_eff_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f)))- timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*(Float).DAT.dbf')], key=lambda x: x[1])
+            comm_eff_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f)))- timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*.dbf')], key=lambda x: x[1])
             for (testurl, testdate) in comm_eff_tests:
                 if not RawTestsList.objects.filter(path=testurl).exists():
                     testname = testurl.split('/')[-1][:-16]
@@ -44,7 +44,7 @@ class TestListView(TemplateView):
                         path=testurl, testname=testname, testdate=testdate, testdatatype="CE")
 
             path = '/mnt/udrive/Lab/Test-Data/FMCommPumpStrdPerformanceTest'
-            comm_perf_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*(Float).DAT.dbf')], key=lambda x: x[1])
+            comm_perf_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*.dbf')], key=lambda x: x[1])
             for (testurl, testdate) in comm_perf_tests:
                 if not RawTestsList.objects.filter(path=testurl).exists():
                     testname = testurl.split('/')[-1][:-16]
@@ -52,15 +52,15 @@ class TestListView(TemplateView):
                         path=testurl, testname=testname, testdate=testdate, testdatatype="CP")
 
             path = '/mnt/udrive/Lab/Test-Data/S1StrdResidentialCiculatorPerfomanceTest'
-            res_s1_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*(Float).DAT.dbf')], key=lambda x: x[1])
+            res_s1_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*.dbf')], key=lambda x: x[1])
             for (testurl, testdate) in res_s1_tests:
                 if not RawTestsList.objects.filter(path=testurl).exists():
-                    testname = testurl.split('/')[-1][:-16]
+                    testname = testurl.split('/')[-1].rstrip('.DBF').rstrip('(float).DAT.DBF').rstrip('(float).DBF').rstrip('.dbf')
                     RawTestsList.objects.create(
                         path=testurl, testname=testname, testdate=testdate, testdatatype="RS1")
 
             path = '/mnt/udrive/Lab/Test-Data/S2StrdResCirculatorPerfomanceTest'
-            res_s2_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*(Float).DAT.dbf')], key=lambda x: x[1])
+            res_s2_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*.dbf')], key=lambda x: x[1])
             print(f'{res_s2_tests:}')
             for (testurl, testdate) in res_s2_tests:
                 if not RawTestsList.objects.filter(path=testurl).exists():
@@ -69,7 +69,7 @@ class TestListView(TemplateView):
                         path=testurl, testname=testname, testdate=testdate, testdatatype="RS2")
 
             path = '/mnt/udrive/Lab/Test-Data/Comm2StandStandard'
-            comm_outside_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*(Float).dbf')], key=lambda x: x[1])
+            comm_outside_tests = sorted([(os.path.join(dirpath, f), (datetime.fromtimestamp(os.path.getctime(os.path.join(dirpath, f))) - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S')) for dirpath, dirnames, files in os.walk(path) for f in fnmatch.filter(files, '*.dbf')], key=lambda x: x[1])
             print(f'{comm_outside_tests:}')
             for (testurl, testdate) in comm_outside_tests:
                 if not RawTestsList.objects.filter(path=testurl).exists():
@@ -226,6 +226,7 @@ class TestDataReduce(View):
         
         if request.GET.get('rawtestids', None):
             file_extenstion = RawTestsList.objects.filter(id=request.GET.get('rawtestids', None).split(',')[0]).values("path")[0]['path'][-16:]
+            print(f'{file_extenstion=}')
             if testloop == "outside":
                 for testid in request.GET.get('rawtestids', None).split(','):
                     testids.append(testid)
@@ -236,8 +237,6 @@ class TestDataReduce(View):
                         id=testid).values("path")[0]['path']
                     testdatadf = Dbf5(testpath).to_dataframe()
                     print(testdatadf)
-                    # testdatadf = pd.pivot_table(testdatadf, index=["Millitm"], columns=['Tagname'], values=['Value'])
-                    # first_id = testdatadf['Time'].iloc[0]
                     testdatadf = testdatadf.set_index(['Date', 'Time', 'Tagname'])['Value'].unstack().reset_index()
                     # print(testdatadf)
                     testheaders = list(testdatadf)
@@ -249,7 +248,7 @@ class TestDataReduce(View):
                     description = ""
                     pump_type = ""
                     dbf_file_type = "outside"
-            elif file_extenstion == " (Float).DAT.dbf":
+            elif ("(Float).DAT.dbf" in file_extenstion) or ("(Float).dbf" in file_extenstion) :
                 for testid in request.GET.get('rawtestids', None).split(','):
                     testids.append(testid)
                     testnames.append(RawTestsList.objects.filter(
@@ -259,8 +258,6 @@ class TestDataReduce(View):
                         id=testid).values("path")[0]['path']
                     testdatadf = Dbf5(testpath).to_dataframe()
                     print(testdatadf)
-                    # testdatadf = pd.pivot_table(testdatadf, index=["Millitm"], columns=['Tagname'], values=['Value'])
-                    # first_id = testdatadf['Time'].iloc[0]
                     testdatadf = testdatadf.set_index(['Date', 'Time', 'Tagname'])['Value'].unstack().reset_index()
                     # print(testdatadf)
                     testheaders = list(testdatadf)
@@ -350,7 +347,7 @@ def testDataReducePlotData(request):
         tempfield = request.GET.get('tempfield', None)
         rpmfield = request.GET.get('rpmfield', None)
         stand = request.GET.get('stand', None)
-        cluster_coeff = request.GET.get('cluster', 0.1)
+        cluster_coeff = request.GET.get('cluster', 0.08)
 
         for testid in request.GET.get('rawtestids', None).split(','):
             testpath = RawTestsList.objects.filter(

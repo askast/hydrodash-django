@@ -14,6 +14,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/', include('apis.urls')),
     path('rpidaq/', include('rpidaq.urls')),
+    path('daq/', include('daq.urls')),
 ]
 
 if settings.DEBUG:

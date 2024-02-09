@@ -11,21 +11,16 @@ def context(request):
                 {"url": "/testdata/directdatainput", "icon": "fas fa-lock", "name": "Direct Data Input"},
                 {"url": "/testdata/keysightdaq", "icon": "fas fa-chart-area", "name": "Keysight DAQ Test"},
             ],
-            "Design Data": [
+            "Data Acquisition": [
                 {
-                    "icon": "fas fa-lock",
-                    "name": "CFD Data",
-                    "submenu": [
-                        {"url": "/testdata", "name": "Raw CFD Results"},
-                        {"url": "/testdata", "name": "CFD Curves"},
-                        {"url": "/testdata", "name": "Edit CFD Results"},
-                    ],
+                    "url": "/daq/",
+                    "icon": "fas fa-tachograph-digital",
+                    "name": "DAQ",
                 },
                 {
-                    "url": "/testdata",
-                    "icon": "far fa-file-text",
-                    "name": "Curve Compare",
-                    "disabled": "true",
+                    "url": "/daq/database",
+                    "icon": "fas fa-database",
+                    "name": "DAQ Database",
                 },
             ],
             "Marketing": [
@@ -65,6 +60,23 @@ def context(request):
                     "url": "/pei/peicalculator",
                     "icon": "fas fa-calculator",
                     "name": "PEI Calculator",
+                },
+            ],
+            "Design Data": [
+                {
+                    "icon": "fas fa-lock",
+                    "name": "CFD Data",
+                    "submenu": [
+                        {"url": "/testdata", "name": "Raw CFD Results"},
+                        {"url": "/testdata", "name": "CFD Curves"},
+                        {"url": "/testdata", "name": "Edit CFD Results"},
+                    ],
+                },
+                {
+                    "url": "/testdata",
+                    "icon": "far fa-file-text",
+                    "name": "Curve Compare",
+                    "disabled": "true",
                 },
             ],
         }
