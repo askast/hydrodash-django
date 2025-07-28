@@ -60,6 +60,8 @@ class ReducedPumpTestDetails(models.Model):
         ("KV", "KV"),
         ("KS", "KS"),
         ("TA", "TA"),
+        ("TS", "TS"),
+        ("TC", "TC"),
         ("SKV", "SKV"),
         ("SKS", "SKS"),
         ("SFI", "SFI"),
@@ -70,6 +72,10 @@ class ReducedPumpTestDetails(models.Model):
         ("RSV", "Radially split, multi-stage, vertical, in-line casing diffuser"),
         ("ST", "Submersible turbine"),
         ("Circ", "Residential Circulator"),
+        ("1600", "1600"),
+        ("1900", "1900"),
+        ("HS", "HS"),
+        ("GT", "GT"),
     )
     testloop_choices = (
         ("C1", "Commercial Front Loop"),

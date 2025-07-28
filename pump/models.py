@@ -11,6 +11,8 @@ class Pump(models.Model):
         ("KV", "KV"),
         ("KS", "KS"),
         ("TA", "TA"),
+        ("TS", "TS"),
+        ("TC", "TC"),
         ("SKV", "SKV"),
         ("SKS", "SKS"),
         ("SFI", "SFI"),
@@ -18,6 +20,8 @@ class Pump(models.Model):
         ("Circ", "Residential Circulator"),
         ("1600", "1600"),
         ("1900", "1900"),
+        ("HS", "HS"),
+        ("GT", "GT"),
     )
     speed_choices = (
         (1160, "1160 RPM"),

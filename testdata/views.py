@@ -73,7 +73,7 @@ class TestListView(TemplateView):
             print(f'{comm_outside_tests:}')
             for (testurl, testdate) in comm_outside_tests:
                 if not RawTestsList.objects.filter(path=testurl).exists():
-                    testname = testurl.split('/')[-1][:-16]
+                    testname = testurl.split('/')[-1][:-12]
                     RawTestsList.objects.create(
                         path=testurl, testname=testname, testdate=testdate, testdatatype="CO")
 
@@ -236,8 +236,6 @@ class TestDataReduce(View):
                         id=testid).values("path")[0]['path']
                     testdatadf = Dbf5(testpath).to_dataframe()
                     print(testdatadf)
-                    # testdatadf = pd.pivot_table(testdatadf, index=["Millitm"], columns=['Tagname'], values=['Value'])
-                    # first_id = testdatadf['Time'].iloc[0]
                     testdatadf = testdatadf.set_index(['Date', 'Time', 'Tagname'])['Value'].unstack().reset_index()
                     # print(testdatadf)
                     testheaders = list(testdatadf)
@@ -254,13 +252,10 @@ class TestDataReduce(View):
                     testids.append(testid)
                     testnames.append(RawTestsList.objects.filter(
                         id=testid).values("testname")[0]['testname'])
-
                     testpath = RawTestsList.objects.filter(
                         id=testid).values("path")[0]['path']
                     testdatadf = Dbf5(testpath).to_dataframe()
                     print(testdatadf)
-                    # testdatadf = pd.pivot_table(testdatadf, index=["Millitm"], columns=['Tagname'], values=['Value'])
-                    # first_id = testdatadf['Time'].iloc[0]
                     testdatadf = testdatadf.set_index(['Date', 'Time', 'Tagname'])['Value'].unstack().reset_index()
                     # print(testdatadf)
                     testheaders = list(testdatadf)
@@ -350,7 +345,7 @@ def testDataReducePlotData(request):
         tempfield = request.GET.get('tempfield', None)
         rpmfield = request.GET.get('rpmfield', None)
         stand = request.GET.get('stand', None)
-        cluster_coeff = request.GET.get('cluster', 0.1)
+        cluster_coeff = request.GET.get('cluster', 0.025)
 
         for testid in request.GET.get('rawtestids', None).split(','):
             testpath = RawTestsList.objects.filter(
@@ -393,9 +388,6 @@ def testDataReducePlotData(request):
             (combined_chartdata_array, np.array([labels]).T)).tolist()
         for index, label in enumerate(labels):
             combined_testdata[index]["label"] = int(label)
-        # Number of clusters in labels, ignoring noise if present.
-        # n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-        # n_noise_ = list(labels).count(-1)
 
     context = {
         "chartdata": combined_chartdata_list,
@@ -455,12 +447,6 @@ def reduceTestData(request):
     record = dict(DBF(testpath, load=True).records[1])
     tempdatetime = str(record['Date'])+" "+record['Time']
     print(f"stand:{stand}")
-    # if stand in ["outside", "rs2"] :
-    #     testdate = datetime.strptime(
-    #         tempdatetime, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4)
-    # else:
-    #     testdate = datetime.strptime(
-    #         tempdatetime, "%Y-%m-%d %H:%M:%S.%f") + timedelta(hours=4)
     try:
         testdate = datetime.strptime(
             tempdatetime, "%Y-%m-%d %H:%M:%S") + timedelta(hours=4)
